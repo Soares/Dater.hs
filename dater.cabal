@@ -1,0 +1,11 @@
+Name:          dater
+Version:       0.0.0
+License:       MIT
+License-file:  LICENSE
+Category:      Writing
+Synopsis:      Express and operate on dates & times in varied formats
+Description:   Lets you declare your own date & time formats
+Author:        Nate Soares
+Maintainer:    nate@natesoares.com
+Build-Type:    Simple
+Cabal-Version: >=1.6
