@@ -1,6 +1,6 @@
 module Range
     ( Range
-    , (%)
+    , mod
     , contains
     , size
     , elems
@@ -10,6 +10,9 @@ module Range
     , end
     , push
     ) where
+import Prelude hiding (mod)
+import qualified Prelude
+
 type Range = (Integer, Integer)
 
 -- | make the range be ascending
@@ -21,8 +24,8 @@ contains :: Range -> Integer -> Bool
 contains r n = n >= a && n <= b where (a, b) = normalize r
 
 -- | wrap around the range (modulus)
-(%) :: Integer -> Range -> Integer
-n % r = a + mod (n-a) (size r) where a = start r
+mod :: Integer -> Range -> Integer
+mod n r = a + Prelude.mod (n-a) (size r) where a = start r
 
 -- | the number of integers in the range
 size :: Range -> Integer

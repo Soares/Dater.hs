@@ -4,12 +4,13 @@ module Earthlike
     , Month
     , Day
     , YMD
+    , Time
     , Detail
     , breakDown
     , rebuild
     ) where
 import Prelude hiding ((!!))
-import Range
+import Range hiding (mod)
 import Utils
 
 -- | Dates are measured as a Rational, measuring days since the 'beginning'
@@ -121,7 +122,7 @@ rebuild :: EarthlikeFormat -> (Year, Month, Day, Time, Detail) -> Rational
 rebuild f (y, m, d, t, x) = a + b + c where
     a = toRational $ numDays f (y, m, d)
     b = dayFraction f (y, m, d) t
-    c = x `ovr` timeUnitsPerDay f (y, m, d)
+    c = x % timeUnitsPerDay f (y, m, d)
 
 -- | Adjust the year and month until they are sane, i.e.
 -- | 12/-1 becomes 11/12
@@ -152,7 +153,7 @@ numDays f ymd = ydays + mdays + ddays where
 
 -- | Turn a Time into a fraction of a day
 dayFraction :: EarthlikeFormat -> YMD -> Time -> Rational
-dayFraction f ymd ts = timeInSeconds `ovr` (head mods) where
+dayFraction f ymd ts = timeInSeconds % head mods where
     timeInSeconds = sum $ zipWith (*) sections (tail mods)
     sections = pad 0 numSections $ take numSections ts
     numSections = length $ timeSplits f ymd

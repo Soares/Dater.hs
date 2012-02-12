@@ -1,8 +1,8 @@
 module Utils
     ( (!!)
+    , (%)
     , around
     , leftover
-    , ovr
     , pad
     , prods
     ) where
@@ -32,8 +32,8 @@ xs !! 0 = head xs
 xs !! n = tail xs !! (n-1)
 
 -- | Division that works on reals
-ovr :: (Real a, Real b) => a -> b -> Rational
-ovr x y = toRational x / toRational y
+(%) :: (Real a, Real b) => a -> b -> Rational
+x % y = toRational x / toRational y
 
 -- | The stuff dropped by floor
 leftover :: Rational -> Rational

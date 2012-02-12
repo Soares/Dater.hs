@@ -1,8 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Date where
-import Control.Category ((.), id)
+module Date
+    ( Date(Date)
+    , era
+    , value
+    , normalize
+    , convert
+    , add
+    , sub
+    ) where
+import Control.Category ((.))
 import Data.Function ( on )
 import Data.Label
+import Era
 import Prelude hiding ((.), id)
 
 -- | Dates are stored as rationals in an era.
@@ -25,8 +34,8 @@ import Prelude hiding ((.), id)
 -- | subtleties of years (i.e. pre-Gregorian calendars), and got off-synch
 -- | over time. However, most dates share the basis of planetary revolution.
 data Date = Date
-    { _value :: Rational
-    , _era   :: Era
+    { _era   :: Era
+    , _value :: Rational
     } deriving (Eq, Show)
 mkLabels [''Date]
 
@@ -37,58 +46,19 @@ normalize :: Date -> Rational
 normalize d = get value d + get (beginning . era) d
 
 
-wrap :: Rational -> Era -> Date
-wrap r e = Date (r - get beginning e) e
+wrap :: Era -> Rational -> Date
+wrap e r = Date e (r - get beginning e)
+
+unwrap :: Date -> Rational
+unwrap d = get value d + get (beginning . era) d
 
 
-convert :: Date -> Era -> Date
-convert d e = wrap (normalize d) e
+convert :: Era -> Date -> Date
+convert e = wrap e . normalize
 
 
-combine :: (Rational -> Rational) -> Date -> Date -> Date
-combine op x y = wrap (normalize x `op` normalize y) (get era x)
+combine :: (Rational -> Rational -> Rational) -> Date -> Date -> Date
+combine op x y = wrap (get era x) (normalize x `op` normalize y)
 add, sub :: Date -> Date -> Date
 add = combine (+)
 sub = combine (-)
-
-sub x y = wrap (normalize x - normalize y) (get era x)
-neg :: Date -> Date
-neg = modify negate value
-
-
-
--- | Time from the beginning, measured in days
-unit :: Format
-unit = Format 0 1
-
-
--- | The number of days since the beginning of this date format
-start :: Format -> Rational
-start = days 0
-
-
--- | Convert a rational to the number of days since the beginning
-normalize :: Rational -> Format -> Rational
-normalize r x = (r + get beginning x) / toRational (get unitsInDay x)
-
-
-instance Ord Date where
-    x <= y = get value x <= get value (y `like` x)
-
-
-instance Num Date where
-    x + y = modify value ((+) $ get value $ y `like` x) x
-    x * y = modify value ((*) $ get value $ y `like` x) x
-    negate = modify value negate
-    abs = modify value abs
-    signum = modify value signum
-    fromInteger i = Date (toRational i) unit
-
-
-convert :: Date -> Format -> Date
-convert (Date r x) y = Date r' y where
-    r' = normalize r x * toRational (unitsInDay y)
-
-
-like :: Date -> Date -> Date
-a `like` b = convert a $ get format b
