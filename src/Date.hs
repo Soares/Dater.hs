@@ -1,9 +1,13 @@
-module Dater where
-{-
+{-# LANGUAGE TemplateHaskell #-}
+module Date where
+import Control.Category ((.), id)
+import Data.Function ( on )
 import Data.Label
+import Prelude hiding ((.), id)
 
--- | Dates are stored as rationals. These rationals track the number of
--- | major units since a fixed point in time.
+-- | Dates are stored as rationals in an era.
+-- | These rationals keep track of days since a relative beginning.
+-- | The era contains a beginning since the 'all-beginning'.
 -- | Obviously, this date system only works where there exists:
 -- |
 -- | * One relatively-fixed point in time (a 'beginning')
@@ -21,21 +25,36 @@ import Data.Label
 -- | subtleties of years (i.e. pre-Gregorian calendars), and got off-synch
 -- | over time. However, most dates share the basis of planetary revolution.
 data Date = Date
-    { _value     :: Rational
-    , _beginning :: Rational
+    { _value :: Rational
+    , _era   :: Era
     } deriving (Eq, Show)
 mkLabels [''Date]
 
-data Format = Format
-    { _beginning     :: Rational
-    , _unitsInDay    :: Integer
-    } deriving (Eq, Show)
-mkLabels [''Format]
+instance Ord Date where (<=) = (<=) `on` normalize
 
 
-instance Ord Format where
-    x <= y = norm x <= norm y where
-        norm z = beginning z / toRational (unitsInDay z)
+normalize :: Date -> Rational
+normalize d = get value d + get (beginning . era) d
+
+
+wrap :: Rational -> Era -> Date
+wrap r e = Date (r - get beginning e) e
+
+
+convert :: Date -> Era -> Date
+convert d e = wrap (normalize d) e
+
+
+combine :: (Rational -> Rational) -> Date -> Date -> Date
+combine op x y = wrap (normalize x `op` normalize y) (get era x)
+add, sub :: Date -> Date -> Date
+add = combine (+)
+sub = combine (-)
+
+sub x y = wrap (normalize x - normalize y) (get era x)
+neg :: Date -> Date
+neg = modify negate value
+
 
 
 -- | Time from the beginning, measured in days
@@ -73,4 +92,3 @@ convert (Date r x) y = Date r' y where
 
 like :: Date -> Date -> Date
 a `like` b = convert a $ get format b
--}
