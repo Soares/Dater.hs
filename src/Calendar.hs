@@ -1,10 +1,12 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Calendar (Calendar(..)) where
 
-class Calendar c where
+class (Read c, Show c, Read (Delta c), Show (Delta c)) => Calendar c where
     data Delta c :: *
-    readDelta :: ReadS (Delta c)
-    showDelta :: Delta c -> ShowS
+
+    display :: c -> Rational -> String
+    parse :: c -> ReadS Rational
 
     plus :: c -> Rational -> Delta c -> Rational
     minus :: c -> Rational -> Delta c -> Rational
@@ -12,4 +14,3 @@ class Calendar c where
 
     normalize :: c -> Rational -> Rational
     denormalize :: c -> Rational -> Rational
-    display :: c -> Rational -> String

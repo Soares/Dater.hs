@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
-module Common.Date
-    ( Cal(..)
+{-# LANGUAGE FlexibleInstances #-}
+module Common
+    ( Common(..)
     , Year
     , Month
     , Day
@@ -56,7 +57,7 @@ type Detail = Rational
 -- | the year and month parameters.
 -- |
 -- | You need only supply an Date and this module will do the rest.
-data Cal = Cal
+data Common = Cal
     { months        :: Year -> Range
     , days          :: Year -> Month -> Range
     , timeSplits    :: YMD -> Time
@@ -66,16 +67,16 @@ data Cal = Cal
 
 -- | The number of days in a year.
 -- | Defaults to counting the number of days in all months that year.
-daysInYear :: Cal -> Year -> Integer
+daysInYear :: Common -> Year -> Integer
 daysInYear f y = sum $ map (size . days f y) $ elems $ months f y
 
 -- | The number of 'seconds' in a day.
-timeUnitsPerDay :: Cal -> YMD -> Integer
+timeUnitsPerDay :: Common -> YMD -> Integer
 timeUnitsPerDay f = product . timeSplits f
 
 -- | Given a year and the 'day' portion of a Date, determine the Month/Day
 -- | pair of the date.
-dateOfYear :: Cal -> Year -> Integer -> YMD
+dateOfYear :: Common -> Year -> Integer -> YMD
 dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
                  | n >= daysInYear f y = dateOfYear f (y+1) (n - daysInYear f y)
                  | otherwise = dayEnum !! n where
@@ -83,14 +84,14 @@ dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
 
 -- | Given YMD and the 'time' portion of a Date, determine how
 -- | to split up the time portion
-timeOfDay :: Cal -> YMD -> Integer -> Time
+timeOfDay :: Common -> YMD -> Integer -> Time
 timeOfDay f ymd t = reverse $ splitAlong t $ reverse $ timeSplits f ymd where
     splitAlong 0 [] = []
     splitAlong n (x:xs) = mod n x : splitAlong (div n x) xs
     splitAlong _ [] = error "timeOfDay was given too much time for one day"
 
 -- | The year, month, and day of a date rational
-largePart :: Cal -> Rational -> YMD
+largePart :: Common -> Rational -> YMD
 largePart f r | d < 0 = from . containing $ dayedYears [-1,-2..]
               | otherwise = from . containing $ dayedYears [0..] where
     dayedYears ys = zip ys (cascade $ map (daysInYear f) ys)
@@ -100,28 +101,28 @@ largePart f r | d < 0 = from . containing $ dayedYears [-1,-2..]
     d = floor r
 
 -- | All the chunks of a day (i.e. Hour, Minute, Second, etc.)
-smallPart :: Cal -> Rational -> Time
+smallPart :: Common -> Rational -> Time
 smallPart f r = timeOfDay f (largePart f r) (timePart f r) where
 
 -- | Just the part of the rational relevant to the day
-dayPart :: Cal -> Rational -> Rational
+dayPart :: Common -> Rational -> Rational
 dayPart f r = leftover r * toRational (timeUnitsPerDay f $ largePart f r)
 
 -- | Just the part of the rational relevant to the time
-timePart :: Cal -> Rational -> Integer
+timePart :: Common -> Rational -> Integer
 timePart f = floor . dayPart f
 
 -- | Any part of the rational so small that it's not relevant to the time
-detail :: Cal -> Rational -> Detail
+detail :: Common -> Rational -> Detail
 detail f = leftover . dayPart f
 
 -- | Split a rational into its component parts
-breakDown :: Cal -> Rational -> (Year, Month, Day, Time, Detail)
+breakDown :: Common -> Rational -> Unwrapped
 breakDown f r = (y, m, d, smallPart f r, detail f r)
     where (y, m, d) = largePart f r
 
 -- | Rebuild a rational from its component parts
-rebuild :: Cal -> (Year, Month, Day, Time, Detail) -> Rational
+rebuild :: Common -> Unwrapped -> Rational
 rebuild f (y, m, d, t, x) = a + b + c where
     a = toRational $ numDays f (y, m, d)
     b = dayFraction f (y, m, d) t
@@ -129,7 +130,7 @@ rebuild f (y, m, d, t, x) = a + b + c where
 
 -- | Adjust the year and month until they are sane, i.e.
 -- | 12/-1 becomes 11/12
-normalizeYM :: Cal -> Year -> Month -> (Year, Month)
+normalizeYM :: Common -> Year -> Month -> (Year, Month)
 normalizeYM f y m
     | months f y `contains` m = (y, m)
     | otherwise = normalizeYM f (y + delta) m'
@@ -137,7 +138,7 @@ normalizeYM f y m
 
 -- | Adjust the year, month, and day until it is sane, i.e.
 -- | 12/0/-1 becomes 11/12/30
-normalizeYMD :: Cal -> YMD -> YMD
+normalizeYMD :: Common -> YMD -> YMD
 normalizeYMD f (y, m, d)
     | days f ny nm `contains` d = (ny, nm, d)
     | otherwise = normalizeYMD f (ny, nm + delta, d')
@@ -145,7 +146,7 @@ normalizeYMD f (y, m, d)
           (ny, nm) = normalizeYM f y m
 
 -- | Turn a YMD into the number of days since 'the beginning'
-numDays :: Cal -> YMD -> Integer
+numDays :: Common -> YMD -> Integer
 numDays f ymd = ydays + mdays + ddays where
     ydays = sum $ map (daysInYear f) ys
     ys = if y >= 0 then [0..y-1] else [-1,-2..y]
@@ -155,7 +156,7 @@ numDays f ymd = ydays + mdays + ddays where
     (y, m, d) = normalizeYMD f ymd
 
 -- | Turn a Time into a fraction of a day
-dayFraction :: Cal -> YMD -> Time -> Rational
+dayFraction :: Common -> YMD -> Time -> Rational
 dayFraction f ymd ts = timeInSeconds % head mods where
     timeInSeconds = sum $ zipWith (*) sections (tail mods)
     sections = pad 0 numSections $ take numSections ts
@@ -164,20 +165,29 @@ dayFraction f ymd ts = timeInSeconds % head mods where
 
 
 
-instance Calendar Cal where
+instance Calendar Common where
     -- TODO: Parameterize the number of elements in Time
-    data Delta Cal = Delta [Maybe Integer]
+    data Delta Common = Delta [Maybe Integer]
 
-    readDelta _ = []        -- TODO
-    showDelta _ = const ""  -- TODO
-    display _ _ = []        -- TODO
+    display _ _ = []
+    parse _ _ = []
 
     plus = change madd
     minus = change msub
     clobber = change mright
 
-    normalize _ _ = 0   -- TODO
-    denormalize _ _ = 0 -- TODO
+    normalize c r = r + beginning c
+    denormalize c r = r - beginning c
+
+-- TODO
+instance Read Common where
+    readsPrec _ _ = []
+instance Show Common where
+    show _ = []
+instance Read (Delta Common) where
+    readsPrec _ _ = []
+instance Show (Delta Common) where
+    show _ = []
 
 type Operation = Integer -> Maybe Integer -> Integer
 type Unwrapped = (Year, Month, Day, Time, Detail)
@@ -187,8 +197,8 @@ madd i = maybe i (i +)
 msub i = maybe i (i -)
 mright i = maybe i id
 
-operation :: Operation -> Unwrapped -> [Maybe Integer] -> Unwrapped
-operation op (y, m, d, ts, x) mns = (y', m', d', ts', x') where
+operation :: Operation -> Unwrapped -> Delta Common -> Unwrapped
+operation op (y, m, d, ts, x) (Delta mns) = (y', m', d', ts', x') where
     at n = if toInteger (length mns) > n then mns !! n else Nothing
     y' = op y (at 0)
     m' = op m (at 1)
@@ -200,8 +210,8 @@ operation op (y, m, d, ts, x) mns = (y', m', d', ts', x') where
     bot = op (denominator x) (at $ ni + 1)
     x' = top % bot
 
-change :: Operation -> Cal -> Rational -> Delta Cal -> Rational
-change op d rat (Delta rel) = rebuild d $ operation op (breakDown d rat) rel
+change :: Operation -> Common -> Rational -> Delta Common -> Rational
+change op d rat = rebuild d . operation op (breakDown d rat)
 
 {-
 fake :: EarthlikeFormat -> Relative -> Rational
