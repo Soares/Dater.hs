@@ -1,5 +1,6 @@
-module Earthlike
-    ( EarthlikeFormat(..)
+{-# LANGUAGE TypeFamilies #-}
+module Common.Date
+    ( Cal(..)
     , Year
     , Month
     , Day
@@ -9,6 +10,8 @@ module Earthlike
     , breakDown
     , rebuild
     ) where
+import Calendar
+import Data.Ratio hiding ((%))
 import Prelude hiding ((!!))
 import Range hiding (mod)
 import Utils
@@ -52,27 +55,27 @@ type Detail = Rational
 -- | the year). This constraint may be relaxed by making chunks ignore
 -- | the year and month parameters.
 -- |
--- | You need only supply an EarthlikeFormat and this module will do the rest.
-data EarthlikeFormat
-    = Format
-    { months :: Year -> Range
-    , days :: Year -> Month -> Range
-    , timeSplits :: YMD -> Time
+-- | You need only supply an Date and this module will do the rest.
+data Cal = Cal
+    { months        :: Year -> Range
+    , days          :: Year -> Month -> Range
+    , timeSplits    :: YMD -> Time
+    , beginning     :: Rational
     }
 
 
 -- | The number of days in a year.
 -- | Defaults to counting the number of days in all months that year.
-daysInYear :: EarthlikeFormat -> Year -> Integer
+daysInYear :: Cal -> Year -> Integer
 daysInYear f y = sum $ map (size . days f y) $ elems $ months f y
 
 -- | The number of 'seconds' in a day.
-timeUnitsPerDay :: EarthlikeFormat -> YMD -> Integer
+timeUnitsPerDay :: Cal -> YMD -> Integer
 timeUnitsPerDay f = product . timeSplits f
 
 -- | Given a year and the 'day' portion of a Date, determine the Month/Day
 -- | pair of the date.
-dateOfYear :: EarthlikeFormat -> Year -> Integer -> YMD
+dateOfYear :: Cal -> Year -> Integer -> YMD
 dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
                  | n >= daysInYear f y = dateOfYear f (y+1) (n - daysInYear f y)
                  | otherwise = dayEnum !! n where
@@ -80,14 +83,14 @@ dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
 
 -- | Given YMD and the 'time' portion of a Date, determine how
 -- | to split up the time portion
-timeOfDay :: EarthlikeFormat -> YMD -> Integer -> Time
+timeOfDay :: Cal -> YMD -> Integer -> Time
 timeOfDay f ymd t = reverse $ splitAlong t $ reverse $ timeSplits f ymd where
     splitAlong 0 [] = []
     splitAlong n (x:xs) = mod n x : splitAlong (div n x) xs
     splitAlong _ [] = error "timeOfDay was given too much time for one day"
 
 -- | The year, month, and day of a date rational
-largePart :: EarthlikeFormat -> Rational -> YMD
+largePart :: Cal -> Rational -> YMD
 largePart f r | d < 0 = from . containing $ dayedYears [-1,-2..]
               | otherwise = from . containing $ dayedYears [0..] where
     dayedYears ys = zip ys (cascade $ map (daysInYear f) ys)
@@ -97,28 +100,28 @@ largePart f r | d < 0 = from . containing $ dayedYears [-1,-2..]
     d = floor r
 
 -- | All the chunks of a day (i.e. Hour, Minute, Second, etc.)
-smallPart :: EarthlikeFormat -> Rational -> Time
+smallPart :: Cal -> Rational -> Time
 smallPart f r = timeOfDay f (largePart f r) (timePart f r) where
 
 -- | Just the part of the rational relevant to the day
-dayPart :: EarthlikeFormat -> Rational -> Rational
+dayPart :: Cal -> Rational -> Rational
 dayPart f r = leftover r * toRational (timeUnitsPerDay f $ largePart f r)
 
 -- | Just the part of the rational relevant to the time
-timePart :: EarthlikeFormat -> Rational -> Integer
+timePart :: Cal -> Rational -> Integer
 timePart f = floor . dayPart f
 
 -- | Any part of the rational so small that it's not relevant to the time
-detail :: EarthlikeFormat -> Rational -> Detail
+detail :: Cal -> Rational -> Detail
 detail f = leftover . dayPart f
 
 -- | Split a rational into its component parts
-breakDown :: EarthlikeFormat -> Rational -> (Year, Month, Day, Time, Detail)
+breakDown :: Cal -> Rational -> (Year, Month, Day, Time, Detail)
 breakDown f r = (y, m, d, smallPart f r, detail f r)
     where (y, m, d) = largePart f r
 
 -- | Rebuild a rational from its component parts
-rebuild :: EarthlikeFormat -> (Year, Month, Day, Time, Detail) -> Rational
+rebuild :: Cal -> (Year, Month, Day, Time, Detail) -> Rational
 rebuild f (y, m, d, t, x) = a + b + c where
     a = toRational $ numDays f (y, m, d)
     b = dayFraction f (y, m, d) t
@@ -126,7 +129,7 @@ rebuild f (y, m, d, t, x) = a + b + c where
 
 -- | Adjust the year and month until they are sane, i.e.
 -- | 12/-1 becomes 11/12
-normalizeYM :: EarthlikeFormat -> Year -> Month -> (Year, Month)
+normalizeYM :: Cal -> Year -> Month -> (Year, Month)
 normalizeYM f y m
     | months f y `contains` m = (y, m)
     | otherwise = normalizeYM f (y + delta) m'
@@ -134,7 +137,7 @@ normalizeYM f y m
 
 -- | Adjust the year, month, and day until it is sane, i.e.
 -- | 12/0/-1 becomes 11/12/30
-normalizeYMD :: EarthlikeFormat -> YMD -> YMD
+normalizeYMD :: Cal -> YMD -> YMD
 normalizeYMD f (y, m, d)
     | days f ny nm `contains` d = (ny, nm, d)
     | otherwise = normalizeYMD f (ny, nm + delta, d')
@@ -142,7 +145,7 @@ normalizeYMD f (y, m, d)
           (ny, nm) = normalizeYM f y m
 
 -- | Turn a YMD into the number of days since 'the beginning'
-numDays :: EarthlikeFormat -> YMD -> Integer
+numDays :: Cal -> YMD -> Integer
 numDays f ymd = ydays + mdays + ddays where
     ydays = sum $ map (daysInYear f) ys
     ys = if y >= 0 then [0..y-1] else [-1,-2..y]
@@ -152,9 +155,59 @@ numDays f ymd = ydays + mdays + ddays where
     (y, m, d) = normalizeYMD f ymd
 
 -- | Turn a Time into a fraction of a day
-dayFraction :: EarthlikeFormat -> YMD -> Time -> Rational
+dayFraction :: Cal -> YMD -> Time -> Rational
 dayFraction f ymd ts = timeInSeconds % head mods where
     timeInSeconds = sum $ zipWith (*) sections (tail mods)
     sections = pad 0 numSections $ take numSections ts
     numSections = length $ timeSplits f ymd
     mods = prods $ timeSplits f ymd
+
+
+
+instance Calendar Cal where
+    -- TODO: Parameterize the number of elements in Time
+    data Delta Cal = Delta [Maybe Integer]
+
+    readDelta _ = []        -- TODO
+    showDelta _ = const ""  -- TODO
+    display _ _ = []        -- TODO
+
+    plus = change madd
+    minus = change msub
+    clobber = change mright
+
+    normalize _ _ = 0   -- TODO
+    denormalize _ _ = 0 -- TODO
+
+type Operation = Integer -> Maybe Integer -> Integer
+type Unwrapped = (Year, Month, Day, Time, Detail)
+
+madd, msub, mright :: Operation
+madd i = maybe i (i +)
+msub i = maybe i (i -)
+mright i = maybe i id
+
+operation :: Operation -> Unwrapped -> [Maybe Integer] -> Unwrapped
+operation op (y, m, d, ts, x) mns = (y', m', d', ts', x') where
+    at n = if toInteger (length mns) > n then mns !! n else Nothing
+    y' = op y (at 0)
+    m' = op m (at 1)
+    d' = op d (at 2)
+    dot t n = op t (at n)
+    ts' = zipWith dot ts [3..]
+    ni = toInteger $ 3 + length ts
+    top = op (numerator x) (at ni)
+    bot = op (denominator x) (at $ ni + 1)
+    x' = top % bot
+
+change :: Operation -> Cal -> Rational -> Delta Cal -> Rational
+change op d rat (Delta rel) = rebuild d $ operation op (breakDown d rat) rel
+
+{-
+fake :: EarthlikeFormat -> Relative -> Rational
+fake f rel = rebuild f (y, m, d, ts, top % bot) where
+    y:m:d:xs = pad 0 8 $ map (fromMaybe 0) rel
+    ts = init $ init xs
+    top = last $ init xs
+    bot = last xs
+-}

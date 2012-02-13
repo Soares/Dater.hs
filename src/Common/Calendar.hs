@@ -1,31 +1,34 @@
-module Relative
-    ( Relative
-    , add
-    , sub
-    , clobber
-    ) where
-import Control.Category ((.), id)
-import Data.Label
+{-# LANGUAGE TypeFamilies #-}
+module Common.Calendar ( ) where
+import Calendar
+import Common.Date
+import Control.Category (id)
 import Data.Ratio hiding ((%))
-import Date hiding (add, sub)
-import Earthlike
-import Era
 import Prelude hiding ((.), (!!), id)
 import Utils
 
-
-type Relative = [Maybe Integer]
 type Op = Integer -> Maybe Integer -> Integer
 type Unwrapped = (Year, Month, Day, Time, Detail)
-type Operation = Unwrapped -> Relative -> Unwrapped
+type Operation = Unwrapped -> [Maybe Integer] -> Unwrapped
 
-madd :: Op
+instance Calendar Date where
+    -- TODO: Parameterize the number of elements in Time
+    data Delta Date = Delta [Maybe Integer]
+
+    readDelta _ = []        -- TODO
+    showDelta _ = const ""  -- TODO
+    display _ _ = []        -- TODO
+
+    plus = change madd
+    minus = change msub
+    clobber = change mright
+
+    normalize _ _ = 0   -- TODO
+    denormalize _ _ = 0 -- TODO
+
+madd, msub, mright :: Op
 madd i = maybe i (i +)
-
-msub :: Op
 msub i = maybe i (i -)
-
-mright :: Op
 mright i = maybe i id
 
 operation :: Op -> Operation
@@ -41,11 +44,8 @@ operation op (y, m, d, ts, x) mns = (y', m', d', ts', x') where
     bot = op (denominator x) (at $ ni + 1)
     x' = top % bot
 
-change :: Op -> Date -> Relative -> Date
-change op dt = Date e . rebuild f . operation op (breakDown f v) where
-    e = get era dt
-    f = get format e
-    v = get value dt
+change :: Op -> Date -> Rational -> Delta Date -> Rational
+change op d rat (Delta rel) = rebuild d $ operation op (breakDown d rat) rel
 
 {-
 fake :: EarthlikeFormat -> Relative -> Rational
@@ -55,9 +55,3 @@ fake f rel = rebuild f (y, m, d, ts, top % bot) where
     top = last $ init xs
     bot = last xs
 -}
-
-
-add, sub, clobber :: Date -> Relative -> Date
-add = change madd
-sub = change msub
-clobber = change mright
