@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE IncoherentInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Common
     ( Common(..)
@@ -93,8 +93,15 @@ class (Fold v a, Num a) => Multiplicands a v | v -> a where
     multiplicands :: v -> v
 instance (Num a) => Multiplicands a (a :. ()) where
     multiplicands (_ :. ()) = 1 :. ()
-instance (Num a, Fold (a :. v) a, Multiplicands a v) => Multiplicands a (a :. v) where
+instance (Num a, Fold (a :. v) a, Multiplicands a (a :. v)) => Multiplicands a (a :. a :. v) where
     multiplicands (_ :. as) = Vec.product as :. multiplicands as
+
+class (Integral a) => SplitUp a v where
+    splitUp :: a -> v -> v
+instance (Integral a) => SplitUp a () where
+    splitUp _ () = ()
+instance (Integral a, SplitUp a v) => SplitUp a (a :. v) where
+    splitUp n (x :. xs) = mod n x :. splitUp (div n x) xs
 
 -- | The number of days in a year.
 -- | Defaults to counting the number of days in all months that year.
@@ -115,11 +122,9 @@ dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
 
 -- | Given YMD and the 'time' portion of a Date, determine how
 -- | to split up the time portion
--- TODO: stop using toList/fromList
+-- TODO: Probably needs reversing?
 -- timeOfDay :: Common v -> YMD -> Integer -> v
-timeOfDay f ymd t = fromList . split . reverse . toList $ timeSplits f ymd where
-    split = snd . foldl split' (t :: Integer, [])
-    split' (n, xs) x = (div n x, mod n x : xs)
+timeOfDay f ymd t = Vec.reverse $ splitUp t $ Vec.reverse $ timeSplits f ymd where
 
 -- | The year, month, and day of a date rational
 -- largePart :: Common v -> Rational -> YMD
@@ -187,17 +192,12 @@ numDays f ymd = ydays + mdays + ddays where
     (y, m, d) = normalizeYMD f ymd
 
 -- | Turn a Time into a fraction of a day
--- TODO: stop using toList/fromList
 -- dayFraction :: Common v -> YMD -> v -> Rational
 dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
-    timeInSeconds = sum $ zipWith (*) (toList ts) (prods $ toList splits)
-    splits = timeSplits f ymd
-    prods (_:xs) = product xs : prods xs
-    prods [] = []
+    timeInSeconds = Vec.sum $ combine (*) ts (multiplicands $ timeSplits f ymd)
 
 combine :: (Map a' b' u' (a -> b), Map a b u v) => (a' -> b') -> u' -> u -> v
 combine op vs ws = Vec.map (Vec.map op vs) ws
-{-
 instance Calendar (Common v) where
     data Delta (Common v) = Delta
         { dYear   :: Maybe Year
@@ -207,12 +207,17 @@ instance Calendar (Common v) where
         , dDetail :: Maybe Detail
         }
 
-    display _ _ = [] -- TODO
-    parse _ _ = [] -- TODO
-
+    -- TODO:
+    display _ _ = []
+    parse _ _ = []
+    {-
     plus = change madd
     minus = change msub
     clobber = change mright
+    -}
+    plus _ r _ = r
+    minus _ r _ = r
+    clobber _ r _ = r
 
     normalize c r = r + beginning c
     denormalize c r = r - beginning c
@@ -226,6 +231,7 @@ instance Read (Delta (Common v)) where
     readsPrec _ _ = []
 instance Show (Delta (Common v)) where
     show _ = []
+{-
 
 type Operation = Integer -> Maybe Integer -> Integer
 
@@ -233,6 +239,7 @@ madd, msub, mright :: Operation
 madd i = maybe i (i +)
 msub i = maybe i (i -)
 mright i = maybe i id
+-}
 
 {-
 operation :: (Integer -> Maybe Integer -> Integer) ->
@@ -240,7 +247,7 @@ operation :: (Integer -> Maybe Integer -> Integer) ->
              -}
 operation op (DateTime y m d (ts :: v) x) (Delta my mm md (mt :: (Maybeify v v' => v')) mx) = DateTime
     (op y my) (op m mm) (op d md)
-    (Vec.zipWith op ts mt)
+    (combine op ts mt)
     (op (numerator x) (numerator <$> mx) % op (denominator x) (denominator <$> mx))
 
 {-
@@ -256,5 +263,4 @@ fake f rel = rebuild f (y, m, d, ts, top % bot) where
     ts = init $ init xs
     top = last $ init xs
     bot = last xs
--}
 -}
