@@ -7,16 +7,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Common
-    ( Common(..)
-    , Year
-    , Month
-    , Day
-    , YMD
-    , Detail
-    -- , breakDown
-    -- , rebuild
-    ) where
+module Halp where
 import Calendar
 import Control.Applicative
 import Data.Ratio hiding ((%))
@@ -27,44 +18,6 @@ import Prelude hiding ((!!))
 import Range hiding (mod)
 import Utils
 
--- | Dates are measured as a Rational, measuring days since the 'beginning'
--- | moment. Note that events may happen before the 'beginning' moment as
--- | rationals may be negative.
--- |
--- | Days are a good choice of measure here because days don't easily
--- | divide years (see pre-gregorian callendars) but most earthlike dates
--- | can be related fairly easily through days.
--- |
--- | An earthlike date consists of the following:
--- | An outer unit
-type Year = Integer
--- | A primary unit, dependent upon the secondary unit
-type Month = Integer
--- | A secondary unit
-type Day = Integer
--- | (Year, Month, and Day can be abbreviated YMD)
-type YMD = (Year, Month, Day)
--- | Leftover detail
-type Detail = Rational
--- |
--- | Further, it is assumed that the primary and secondary units are
--- | interlinked, i.e. the primary unit is dependant upon the secondary.
--- | In other words, you don't say that it is day 32, you say that it is
--- | Month 2, day 1.
--- |
--- | This constraint can be relaxed by having 'only one month' or by
--- | having 'only one day per month' or by having months that generate
--- | uniform days, depending upon how you want the constraint relaxed.
--- |
--- | Again further, it is assumed that the time splits depend only on the
--- | Outer and primary units (since the secondary unit depends upon the primary
--- | unit). In other words, the number of hours in a day is allowed to vary
--- | by time of year (i.e. for calendars that measure daytime hours as a
--- | tenth-portion of daylight on earth; hour length would change throughout
--- | the year). This constraint may be relaxed by making chunks ignore
--- | the year and month parameters.
--- |
--- | You need only supply an Date and this module will do the rest.
 data Common n = Cal
     { months        :: Year -> Range
     , days          :: Year -> Month -> Range
@@ -84,22 +37,6 @@ class (Vec n a v, Fold v a, VecList a v, ZipWith a a a v v v) => NList n a v
 instance NList N1 a (a :. ())
 instance NList N2 a (Vec.Vec2 a)
 instance NList N3 a (Vec.Vec3 a)
-instance NList N4 a (Vec.Vec4 a)
-instance NList N5 a (Vec.Vec5 a)
-instance NList N6 a (Vec.Vec6 a)
-instance NList N7 a (Vec.Vec7 a)
-instance NList N8 a (Vec.Vec8 a)
-instance NList N9 a (Vec.Vec9 a)
-instance NList N10 a (Vec.Vec10 a)
-instance NList N11 a (Vec.Vec11 a)
-instance NList N12 a (Vec.Vec12 a)
-instance NList N13 a (Vec.Vec13 a)
-instance NList N14 a (Vec.Vec14 a)
-instance NList N15 a (Vec.Vec15 a)
-instance NList N16 a (Vec.Vec16 a)
-instance NList N17 a (Vec.Vec17 a)
-instance NList N18 a (Vec.Vec18 a)
-instance NList N19 a (Vec.Vec19 a)
 
 
 -- | The number of days in a year.
@@ -121,7 +58,6 @@ dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
 
 -- | Given YMD and the 'time' portion of a Date, determine how
 -- | to split up the time portion
--- TODO: stop using toList/fromList
 timeOfDay :: NList n Integer v => Common n -> YMD -> Integer -> v
 timeOfDay f ymd t = fromList . split . reverse . toList $ timeSplits f ymd where
     split = snd . foldl split' (t :: Integer, [])
@@ -193,26 +129,11 @@ numDays f ymd = ydays + mdays + ddays where
     (y, m, d) = normalizeYMD f ymd
 
 -- | Turn a Time into a fraction of a day
--- TODO: stop using toList/fromList
 dayFraction :: NList n Integer v => Common n -> YMD -> v -> Rational
 dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
-    timeInSeconds = sum $ zipWith (*) (toList ts) (prods $ toList splits)
-    splits = timeSplits f ymd
-    prods (_:xs) = product xs : prods xs
-    prods [] = []
-
-
--- | Generally, turns a list into a list of products.
--- | Useful in the following scenario:
--- |
--- | Given 24 hours in a day, 60 minutes in a second, 60 seconds in a minute
--- | as the list [24, 60, 60]
--- | generates the list [86400, 3600, 60, 1]
--- | Which can be used to combine days, hours, minutes, and seconds into a
--- | common ratio.
-prods :: [Integer] -> [Integer]
-prods [] = [1]
-prods (x:xs) = x * product xs : prods xs
+    timeInSeconds = Vec.sum $ Vec.zipWith (*) ts mods
+    -- TODO: mods = drop 1 $ prods $ timeSplits f ymd
+    mods = timeSplits f ymd
 
 instance (NList n (Maybe Integer) v, NList n Integer u, ZipWith Integer (Maybe Integer) Integer u v u) => Calendar (Common n) where
     data Delta (Common n) = Delta
@@ -271,3 +192,4 @@ fake f rel = rebuild f (y, m, d, ts, top % bot) where
     top = last $ init xs
     bot = last xs
 -}
+

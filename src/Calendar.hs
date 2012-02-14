@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Calendar (Calendar(..)) where
 
-class (Read c, Show c, Read (Delta c), Show (Delta c)) => Calendar c where
+class (Show c, Read (Delta c), Show (Delta c)) => Calendar c where
     data Delta c :: *
 
     display :: c -> Rational -> String
