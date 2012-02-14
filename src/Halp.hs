@@ -18,76 +18,52 @@ import Prelude hiding ((!!))
 import Range hiding (mod)
 import Utils
 
-data Common n = Cal
-    { months        :: Year -> Range
-    , days          :: Year -> Month -> Range
-    , timeSplits    :: (NList n Integer v) => YMD -> v
-    , beginning     :: Rational
+-- | We have a datatype that Foo uses to generate data
+-- | In actuallity, there are a few of these, and they are oft complex
+type Something = Int
+
+-- | Foos generate data. For now, we'll pretend that the data is homogeneous.
+type Data = Int
+
+-- | Foo is used for generating both static data and vectors of data.
+-- | The size of the vector needs to be parametized.
+data Foo n = Foo
+    { static  :: Something -> Data
+    , dynamic :: (NList n Data v) => Something -> v
     }
 
-data (NList n Integer v) => DateTime n v = DateTime
-    { year   :: Year
-    , month  :: Month
-    , day    :: Day
-    , time   :: v
-    , detail :: Detail
+-- | Sometimes we want to directly manipulate the unwrapped data.
+data (NList n Data v) => Unwrapped n v = Unwrapped
+    { uStatic  :: Data
+    , uDynamic :: v
     }
 
+-- | Would love to be able to avoid this.
 class (Vec n a v, Fold v a, VecList a v, ZipWith a a a v v v) => NList n a v
 instance NList N1 a (a :. ())
 instance NList N2 a (Vec.Vec2 a)
 instance NList N3 a (Vec.Vec3 a)
+-- (and so on)
 
+-- | These are some functions that operate on foo data.
+-- | Why do I need the list requirement here?
+fooProd :: NList n Data v => Foo n -> Int -> Int
+fooProd f = Vec.product . dynamic f
 
--- | The number of days in a year.
--- | Defaults to counting the number of days in all months that year.
-daysInYear :: Common n -> Year -> Integer
-daysInYear f y = sum $ map (size . days f y) $ elems $ months f y
+-- | This is a function that operates on the parts.
+-- | Ideally, we shouldn't need to use toList and fromList here,
+-- | but I haven't figured out how to cleanly parameterize
+-- | the requirements.
+integratedParts :: NList n Data v => Foo n -> Something -> v
+integratedParts f s = fromList . modify . reverse . toList $ dynamic f s where
+    modify = foldl (+) s
 
--- | The number of 'seconds' in a day.
-timeUnitsPerDay :: NList n Integer v => Common n -> YMD -> Integer
-timeUnitsPerDay f = Vec.product . timeSplits f
+-- | I don't need NList here.
+staticPart :: Foo n -> Something -> Data
+staticPart f s = s + static f s
 
--- | Given a year and the 'day' portion of a Date, determine the Month/Day
--- | pair of the date.
-dateOfYear :: Common n -> Year -> Integer -> YMD
-dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
-                 | n >= daysInYear f y = dateOfYear f (y+1) (n - daysInYear f y)
-                 | otherwise = dayEnum !! n where
-    dayEnum = [(y, m, d) | m <- elems $ months f y, d <- elems $ days f y m]
-
--- | Given YMD and the 'time' portion of a Date, determine how
--- | to split up the time portion
-timeOfDay :: NList n Integer v => Common n -> YMD -> Integer -> v
-timeOfDay f ymd t = fromList . split . reverse . toList $ timeSplits f ymd where
-    split = snd . foldl split' (t :: Integer, [])
-    split' (n, xs) x = (div n x, mod n x : xs)
-
--- | The year, month, and day of a date rational
-largePart :: Common n -> Rational -> YMD
-largePart f r | d < 0 = from . containing $ dayedYears [-1,-2..]
-              | otherwise = from . containing $ dayedYears [0..] where
-    dayedYears ys = zip ys (cascade $ map (daysInYear f) ys)
-    cascade xs = x : map (x+) (cascade $ tail xs) where x = head xs
-    containing = head . filter ((abs d <) . snd)
-    from (y, t) = dateOfYear f y n where n = (d-t) + daysInYear f y
-    d = floor r
-
--- | All the chunks of a day (i.e. Hour, Minute, Second, etc.)
-smallPart :: NList n Integer v => Common n -> Rational -> v
-smallPart f r = timeOfDay f (largePart f r) (timePart f r) where
-
--- | Just the part of the rational relevant to the day
-dayPart :: NList n Integer v => Common n -> Rational -> Rational
-dayPart f r = leftover r * toRational (timeUnitsPerDay f $ largePart f r)
-
--- | Just the part of the rational relevant to the time
-timePart :: NList n Integer v => Common n -> Rational -> Integer
-timePart f = floor . dayPart f
-
--- | Any part of the rational so small that it's not relevant to the time
-detailPart :: NList n Integer v => Common n -> Rational -> Detail
-detailPart f = leftover . dayPart f
+-- | Get the foo into an operational state
+unwrap :: NList n Data v => Foo n -> 
 
 -- | Split a rational into its component parts
 breakDown :: NList n Integer v => Common n -> Rational -> DateTime n v

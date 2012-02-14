@@ -19,6 +19,7 @@ module Common
     ) where
 import Calendar
 import Control.Applicative
+import Data.Maybe
 import Data.Ratio hiding ((%))
 import Data.Vec ( Vec, VecList, Fold, Head, Tail, Map, ZipWith, (:.)(..), toList, fromList )
 import Data.Vec.Nat
@@ -37,13 +38,13 @@ import Utils
 -- |
 -- | An earthlike date consists of the following:
 -- | An outer unit
-type Year = Integer
+-- type Year = Integer
 -- | A primary unit, dependent upon the secondary unit
-type Month = Integer
+-- type Month = Integer
 -- | A secondary unit
-type Day = Integer
+-- type Day = Integer
 -- | (Year, Month, and Day can be abbreviated YMD)
-type YMD = (Year, Month, Day)
+-- type YMD = (Year, Month, Day)
 -- | Leftover detail
 type Detail = Rational
 -- |
@@ -65,162 +66,141 @@ type Detail = Rational
 -- | the year and month parameters.
 -- |
 -- | You need only supply an Date and this module will do the rest.
-data Common n = Cal
-    { months        :: Year -> Range
-    , days          :: Year -> Month -> Range
-    , timeSplits    :: (NList n Integer v) => YMD -> v
+
+class (Fold v i) => Earthlike dt v i where
+    data DateTime v i
+
+    -- | The number of days in a year.
+    -- | Defaults to counting the number of days in all months that year.
+    daysInYear      :: dt v -> i -> i
+    -- | Given a year and the 'day' portion of a Date, determine the Month/Day
+    -- | pair of the date.
+    dateOfYear      :: dt v -> i -> i -> (i,i,i)
+    -- | The number of 'seconds' in a day.
+    timeUnitsPerDay :: dt v -> (i,i,i) -> i
+    -- | Given YMD and the 'time' portion of a Date, determine how
+    -- | to split up the time portion
+    timeOfDay       :: dt v -> (i,i,i) -> i -> v
+
+    -- | Just the part of the rational relevant to the day
+    dayPart         :: dt v -> Rational -> Rational
+    -- | The year, month, and day of a date rational
+    largePart       :: dt v -> Rational -> (i,i,i)
+    -- | Just the part of the rational relevant to the time
+    timePart        :: dt v -> Rational -> i
+    -- | All the chunks of a day (i.e. Hour, Minute, Second, etc.)
+    smallPart       :: dt v -> Rational -> v
+    -- | Any part of the rational so small that it's not relevant to the time
+    detailPart      :: dt v -> Rational -> Rational
+
+    -- | Split a rational into its component parts
+    breakDown       :: dt v -> Rational -> DateTime v i
+    -- | Rebuild a rational from its component parts
+    rebuild         :: dt v -> DateTime v i -> Rational
+
+data (Fold (v i) i, Integral i) => Common v i = Cal
+    { months        :: i -> Range
+    , days          :: i -> i -> Range
+    , timeSplits    :: (i, i, i) -> v i
     , beginning     :: Rational
     }
 
-data (NList n Integer v) => DateTime n v = DateTime
-    { year   :: Year
-    , month  :: Month
-    , day    :: Day
-    , time   :: v
-    , detail :: Detail
-    }
+instance (Fold (v i) i, Integral i) => Earthlike Common v i where
+    data DateTime v i = DateTime
+        { year   :: i
+        , month  :: i
+        , day    :: i
+        , time   :: (v i)
+        , detail :: Rational
+        }
 
-class (Vec n a v, Fold v a, VecList a v, ZipWith a a a v v v) => NList n a v
-instance NList N1 a (a :. ())
-instance NList N2 a (Vec.Vec2 a)
-instance NList N3 a (Vec.Vec3 a)
-instance NList N4 a (Vec.Vec4 a)
-instance NList N5 a (Vec.Vec5 a)
-instance NList N6 a (Vec.Vec6 a)
-instance NList N7 a (Vec.Vec7 a)
-instance NList N8 a (Vec.Vec8 a)
-instance NList N9 a (Vec.Vec9 a)
-instance NList N10 a (Vec.Vec10 a)
-instance NList N11 a (Vec.Vec11 a)
-instance NList N12 a (Vec.Vec12 a)
-instance NList N13 a (Vec.Vec13 a)
-instance NList N14 a (Vec.Vec14 a)
-instance NList N15 a (Vec.Vec15 a)
-instance NList N16 a (Vec.Vec16 a)
-instance NList N17 a (Vec.Vec17 a)
-instance NList N18 a (Vec.Vec18 a)
-instance NList N19 a (Vec.Vec19 a)
+    daysInYear c y = sum $ map (size . days c y) $ elems $ months c y
 
+    timeUnitsPerDay c = Vec.product . timeSplits c
 
--- | The number of days in a year.
--- | Defaults to counting the number of days in all months that year.
-daysInYear :: Common n -> Year -> Integer
-daysInYear f y = sum $ map (size . days f y) $ elems $ months f y
+    dateOfYear c y n | n < 0 = dateOfYear c (y-1) (n + daysInYear c (y-1))
+                     | n >= daysInYear c y = dateOfYear c (y+1) (n - daysInYear c y)
+                     | otherwise = dayEnum !! n where
+        dayEnum = [(y, m, d) | m <- elems $ months c y, d <- elems $ days c y m]
 
--- | The number of 'seconds' in a day.
-timeUnitsPerDay :: NList n Integer v => Common n -> YMD -> Integer
-timeUnitsPerDay f = Vec.product . timeSplits f
+    timeOfDay c ymd n = snd $ Vec.foldr split (n, undefined) $ timeSplits c ymd where
+        split _ _ = undefined
+        -- TODO: split (n, xs) x = (div n x, mod n x :. xs)
 
--- | Given a year and the 'day' portion of a Date, determine the Month/Day
--- | pair of the date.
-dateOfYear :: Common n -> Year -> Integer -> YMD
-dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
-                 | n >= daysInYear f y = dateOfYear f (y+1) (n - daysInYear f y)
-                 | otherwise = dayEnum !! n where
-    dayEnum = [(y, m, d) | m <- elems $ months f y, d <- elems $ days f y m]
+    largePart c r | d < 0 = from . containing $ dayedYears [-1,-2..]
+                  | otherwise = from . containing $ dayedYears [0..] where
+        dayedYears ys = zip ys (cascade $ map (daysInYear c) ys)
+        cascade xs = x : map (x+) (cascade $ tail xs) where x = head xs
+        containing = head . filter ((abs d <) . snd)
+        from (y, t) = dateOfYear c y n where n = (d-t) + daysInYear c y
+        d = floor r
 
--- | Given YMD and the 'time' portion of a Date, determine how
--- | to split up the time portion
--- TODO: stop using toList/fromList
-timeOfDay :: NList n Integer v => Common n -> YMD -> Integer -> v
-timeOfDay f ymd t = fromList . split . reverse . toList $ timeSplits f ymd where
-    split = snd . foldl split' (t :: Integer, [])
-    split' (n, xs) x = (div n x, mod n x : xs)
+    smallPart c r = timeOfDay c (largePart c r) (timePart c r) where
 
--- | The year, month, and day of a date rational
-largePart :: Common n -> Rational -> YMD
-largePart f r | d < 0 = from . containing $ dayedYears [-1,-2..]
-              | otherwise = from . containing $ dayedYears [0..] where
-    dayedYears ys = zip ys (cascade $ map (daysInYear f) ys)
-    cascade xs = x : map (x+) (cascade $ tail xs) where x = head xs
-    containing = head . filter ((abs d <) . snd)
-    from (y, t) = dateOfYear f y n where n = (d-t) + daysInYear f y
-    d = floor r
+    dayPart c r = leftover r * toRational (timeUnitsPerDay c $ largePart c r)
 
--- | All the chunks of a day (i.e. Hour, Minute, Second, etc.)
-smallPart :: NList n Integer v => Common n -> Rational -> v
-smallPart f r = timeOfDay f (largePart f r) (timePart f r) where
+    timePart c = floor . dayPart c
 
--- | Just the part of the rational relevant to the day
-dayPart :: NList n Integer v => Common n -> Rational -> Rational
-dayPart f r = leftover r * toRational (timeUnitsPerDay f $ largePart f r)
+    detailPart c = leftover . dayPart c
 
--- | Just the part of the rational relevant to the time
-timePart :: NList n Integer v => Common n -> Rational -> Integer
-timePart f = floor . dayPart f
+    breakDown c r = DateTime y m d (smallPart c r) (detailPart c r)
+        where (y, m, d) = largePart c r
 
--- | Any part of the rational so small that it's not relevant to the time
-detailPart :: NList n Integer v => Common n -> Rational -> Detail
-detailPart f = leftover . dayPart f
+    rebuild c (DateTime y m d t x) = aa + bb + cc where
+        aa = toRational $ numDays c (y, m, d)
+        bb = dayFraction c (y, m, d) t
+        cc = x % timeUnitsPerDay c (y, m, d)
 
--- | Split a rational into its component parts
-breakDown :: NList n Integer v => Common n -> Rational -> DateTime n v
-breakDown f r = DateTime y m d (smallPart f r) (detailPart f r)
-    where (y, m, d) = largePart f r
+        -- | Custom methods
+        normalizeYM     :: Common v i -> i -> i -> (i,i)
+        normalizeYMD    :: Common v i -> (i,i,i) -> (i,i,i)
+        numDays         :: Common v i -> (i,i,i) -> i
+        dayFraction     :: Common v i -> (i,i,i) -> (v i) -> Rational
 
--- | Rebuild a rational from its component parts
-rebuild :: NList n Integer v => Common n -> DateTime n v -> Rational
-rebuild f (DateTime y m d t x) = a + b + c where
-    a = toRational $ numDays f (y, m, d)
-    b = dayFraction f (y, m, d) t
-    c = x % timeUnitsPerDay f (y, m, d)
+        -- | Adjust the year and month until they are sane, i.e.
+        -- | 12/-1 becomes 11/12
+        normalizeYM c y m
+            | months c y `contains` m = (y, m)
+            | otherwise = normalizeYM c (y + delta) m'
+            where (delta, m') = push m (around (months c) y)
 
--- | Adjust the year and month until they are sane, i.e.
--- | 12/-1 becomes 11/12
-normalizeYM :: Common n -> Year -> Month -> (Year, Month)
-normalizeYM f y m
-    | months f y `contains` m = (y, m)
-    | otherwise = normalizeYM f (y + delta) m'
-    where (delta, m') = push m (around (months f) y)
+        -- | Adjust the year, month, and day until it is sane, i.e.
+        -- | 12/0/-1 becomes 11/12/30
+        normalizeYMD c (y, m, d)
+            | days c ny nm `contains` d = (ny, nm, d)
+            | otherwise = normalizeYMD c (ny, nm + delta, d')
+            where (delta, d') = push d (around (days c ny) nm)
+                  (ny, nm) = normalizeYM c y m
 
--- | Adjust the year, month, and day until it is sane, i.e.
--- | 12/0/-1 becomes 11/12/30
-normalizeYMD :: Common n -> YMD -> YMD
-normalizeYMD f (y, m, d)
-    | days f ny nm `contains` d = (ny, nm, d)
-    | otherwise = normalizeYMD f (ny, nm + delta, d')
-    where (delta, d') = push d (around (days f ny) nm)
-          (ny, nm) = normalizeYM f y m
+        -- | Turn a YMD into the number of days since 'the beginning'
+        numDays c ymd = ydays + mdays + ddays where
+            ydays = sum $ map (daysInYear c) ys
+            ys = if y >= 0 then [0..y-1] else [-1,-2..y]
+            mdays = sum $ map (size . days c y) ms
+            ms = filter (m >) (elems $ months c y)
+            ddays = toInteger $ length $ filter (d >) (elems $ days c y m)
+            (y, m, d) = normalizeYMD c ymd
 
--- | Turn a YMD into the number of days since 'the beginning'
-numDays :: Common n -> YMD -> Integer
-numDays f ymd = ydays + mdays + ddays where
-    ydays = sum $ map (daysInYear f) ys
-    ys = if y >= 0 then [0..y-1] else [-1,-2..y]
-    mdays = sum $ map (size . days f y) ms
-    ms = filter (m >) (elems $ months f y)
-    ddays = toInteger $ length $ filter (d >) (elems $ days f y m)
-    (y, m, d) = normalizeYMD f ymd
-
--- | Turn a Time into a fraction of a day
--- TODO: stop using toList/fromList
-dayFraction :: NList n Integer v => Common n -> YMD -> v -> Rational
-dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
-    timeInSeconds = sum $ zipWith (*) (toList ts) (prods $ toList splits)
-    splits = timeSplits f ymd
-    prods (_:xs) = product xs : prods xs
-    prods [] = []
+        -- | Turn a Time into a fraction of a day
+        dayFraction c ymd ts = timeInSeconds % timeUnitsPerDay c ymd where
+            timeInSeconds :: Integer = Vec.sum $ Vec.zipWith (*) ts (prods splits)
+            splits = timeSplits c ymd
+            prods _ = undefined
+            -- TODO: prods (_ :. xs) = Vec.product xs :. prods xs
 
 
--- | Generally, turns a list into a list of products.
--- | Useful in the following scenario:
--- |
--- | Given 24 hours in a day, 60 minutes in a second, 60 seconds in a minute
--- | as the list [24, 60, 60]
--- | generates the list [86400, 3600, 60, 1]
--- | Which can be used to combine days, hours, minutes, and seconds into a
--- | common ratio.
-prods :: [Integer] -> [Integer]
-prods [] = [1]
-prods (x:xs) = x * product xs : prods xs
+class Maybeify a a'
+instance Maybeify () ()
+instance Maybeify (a :. ()) (Maybe a :. ())
+instance (Maybeify v v') => Maybeify (a :. v) (Maybe a :. v')
 
-instance (NList n (Maybe Integer) v, NList n Integer u, ZipWith Integer (Maybe Integer) Integer u v u) => Calendar (Common n) where
-    data Delta (Common n) = Delta
-        { dYear   :: Maybe Year
-        , dMonth  :: Maybe Month
-        , dDay    :: Maybe Day
-        , dTime   :: (NList n (Maybe Integer) v, NList n Integer u, ZipWith Integer (Maybe Integer) Integer u v u) => v
-        , dDetail :: Maybe Detail
+instance (Fold (v i) i, Integral i) => Calendar (Common (v i) i) where
+    data Delta (Common v i) = Delta
+        { dYear   :: Maybe i
+        , dMonth  :: Maybe i
+        , dDay    :: Maybe i
+        , dTime   :: v (Maybe i)
+        , dDetail :: Maybe Rational
         }
 
     display _ _ = [] -- TODO
@@ -228,44 +208,42 @@ instance (NList n (Maybe Integer) v, NList n Integer u, ZipWith Integer (Maybe I
 
     plus = change madd
     minus = change msub
-    clobber = change mright
+    clobber = change fromMaybe
 
     normalize c r = r + beginning c
     denormalize c r = r - beginning c
 
--- TODO
-instance Read (Common n) where
-    readsPrec _ _ = []
-instance Show (Common n) where
-    show _ = []
-instance Read (Delta (Common n)) where
-    readsPrec _ _ = []
-instance Show (Delta (Common n)) where
-    show _ = []
-
-type Operation = Integer -> Maybe Integer -> Integer
-
-madd, msub, mright :: Operation
+madd, msub :: (Integral i) => i -> Maybe i -> i
 madd i = maybe i (i +)
 msub i = maybe i (i -)
-mright i = maybe i id
 
-operation :: (NList n (Maybe Integer) v, NList n Integer u, ZipWith Integer (Maybe Integer) Integer u v u) =>
-             (Integer -> Maybe Integer -> Integer) ->
-             DateTime n u -> Delta (Common n) -> DateTime n u
-operation op (DateTime y m d (ts :: u) x) (Delta my mm md (mt :: v) mx) = DateTime
+operation :: (Fold (v i) i, Integral i) =>
+             (i -> Maybe i -> i) ->
+             DateTime v i -> Delta (Common v i) -> DateTime v i
+operation op (DateTime y m d ts x) (Delta my mm md mt mx) = DateTime
     (op y my) (op m mm) (op d md)
     (Vec.zipWith op ts mt)
-    (op (numerator x) (numerator <$> mx) % op (denominator x) (denominator <$> mx))
+    (op (numerator x) (numerator <$> mx)
+     % op (denominator x) (denominator <$> mx))
 
-change :: (NList n (Maybe Integer) v, NList n Integer u, ZipWith Integer (Maybe Integer) Integer u v u) =>
-          (Integer -> Maybe Integer -> Integer) ->
-          Common n -> Rational -> Delta (Common n) -> Rational
+change :: (Fold (v i) i, Integral i) =>
+          (i -> Maybe i -> i) ->
+          Common v i -> Rational -> Delta (Common v i) -> Rational
 change op c r = rebuild c . operation op (breakDown c r)
+
+-- TODO
+instance Read (Common v i) where
+    readsPrec _ _ = []
+instance Show (Common v i) where
+    show _ = []
+instance Read (Delta (Common v i)) where
+    readsPrec _ _ = []
+instance Show (Delta (Common v i)) where
+    show _ = []
 
 {-
 fake :: EarthlikeFormat -> Relative -> Rational
-fake f rel = rebuild f (y, m, d, ts, top % bot) where
+fake c rel = rebuild c (y, m, d, ts, top % bot) where
     y:m:d:xs = pad 0 8 $ map (fromMaybe 0) rel
     ts = init $ init xs
     top = last $ init xs
