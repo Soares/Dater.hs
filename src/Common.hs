@@ -24,9 +24,8 @@ import Calendar
 import Control.Applicative
 import Data.Maybe
 import Data.Ratio hiding ((%))
-import Data.Vec ( Reverse', Fold, Map, (:.)((:.)) )
-import Data.Vec.Nat
-import qualified Data.Vec as Vec
+import Vector hiding (map, reverse)
+import qualified Vector as Vec
 import Prelude hiding ((!!))
 import Range hiding (mod)
 import Utils
@@ -84,48 +83,10 @@ data DateTime v = DateTime
     , detail :: Detail
     }
 
-class Maybeify v v' | v -> v' where
-    maybeify :: v -> v'
-instance Maybeify () () where
-    maybeify () = ()
-instance (Maybeify v v') => Maybeify (a :. v) (Maybe a :. v') where
-    maybeify (a :. v) = (Just a :. maybeify v)
-
-class Combineable a b c u v w
-    | u -> a
-    , v -> b
-    , w -> c
-    , a v w -> u
-    , b u w -> v
-    , c v u -> w
-    where
-    combine :: (a -> b -> c) -> u -> v -> w
-instance Combineable a b c (a:.()) (b:.()) (c:.()) where
-    combine f (a :. ()) (b :. ()) = f a b :. ()
-instance (Combineable a b c (a:.u) (b:.v) (c:.w)) => Combineable a b c (a:.a:.u) (b:.b:.v) (c:.c:.w) where
-    combine f (a :. u) (b :. v) = f a b :. combine f u v
-
-class (Fold v a, Num a) => Multiplicands a v | v -> a where
-    multiplicands :: v -> v
-instance (Num a) => Multiplicands a (a :. ()) where
-    multiplicands (_ :. ()) = 1 :. ()
-instance (Num a, Fold (a :. v) a, Multiplicands a (a :. v)) => Multiplicands a (a :. a :. v) where
-    multiplicands (_ :. as) = Vec.product as :. multiplicands as
-
-class (Integral a) => SplitUp a v where
-    splitUp :: a -> v -> v
-instance (Integral a) => SplitUp a () where
-    splitUp _ () = ()
-instance (Integral a, SplitUp a v) => SplitUp a (a :. v) where
-    splitUp n (x :. xs) = mod n x :. splitUp (div n x) xs
-
-data Vec n a where
-    None :: Vec N0 a
-    Next :: a -> Vec n a -> Vec (Succ n) a
 type NList v i =
-    ( Fold (v i) i
+    ( Reduce (v i) i
     , SplitUp i (v i)
-    , Reverse' () (v i) (v i)
+    , Reverse (v i)
     , Map i i (v i) (v i)
     , Multiplicands i (v i)
     , Combineable i i i (v i) (v i) (v i)
@@ -139,7 +100,7 @@ daysInYear f y = sum $ map (size . days f y) $ elems $ months f y
 
 -- | The number of 'seconds' in a day.
 timeUnitsPerDay :: NList v Integer => Common v -> YMD -> Integer
-timeUnitsPerDay f = Vec.product . timeSplits f
+timeUnitsPerDay f = reduce (*) 1 . timeSplits f
 
 -- | Given a year and the 'day' portion of a Date, determine the Month/Day
 -- | pair of the date.
@@ -223,7 +184,7 @@ numDays f ymd = ydays + mdays + ddays where
 -- | Turn a Time into a fraction of a day
 dayFraction :: NList v Integer => Common v -> YMD -> v Integer -> Rational
 dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
-    timeInSeconds = Vec.sum $ combine (*) ts (multiplicands $ timeSplits f ymd)
+    timeInSeconds = reduce (+) 1 $ combine (*) ts (multiplicands $ timeSplits f ymd)
 
 instance NList v Integer => Calendar (Common v) where
     data Delta (Common v) = Delta
