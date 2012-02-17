@@ -26,7 +26,7 @@ import Data.Maybe
 import Data.Ratio hiding ((%))
 import TypeLevel.Vector
 import Prelude hiding ((!!), reverse)
-import Range hiding (mod)
+import Range hiding (mod, start, end)
 import Utils
 
 -- | Dates are measured as a Rational, measuring days since the 'beginning'
@@ -68,10 +68,10 @@ type Detail = Rational
 -- |
 -- | You need only supply an Date and this module will do the rest.
 data Common v = Common
-    { months        :: Year -> Range
-    , days          :: Year -> Month -> Range
-    , timeSplits    :: NList v Integer => YMD -> v Integer
-    , beginning     :: Rational
+    { months     :: Year -> Range
+    , days       :: Year -> Month -> Range
+    , timeSplits :: NList v Integer => YMD -> v Integer
+    , start      :: Rational
     }
 
 data DateTime v = DateTime
@@ -198,8 +198,7 @@ instance NList v Integer => Calendar (Common v) where
     minus = change msub
     clobber = change fromMaybe
 
-    normalize c r = r + beginning c
-    denormalize c r = r - beginning c
+    beginning = start
 
 -- TODO
 instance Read (Common v) where
