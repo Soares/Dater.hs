@@ -24,9 +24,8 @@ import Calendar
 import Control.Applicative
 import Data.Maybe
 import Data.Ratio hiding ((%))
-import Vector hiding (map, reverse)
-import qualified Vector as Vec
-import Prelude hiding ((!!))
+import TypeLevel.Vector
+import Prelude hiding ((!!), reverse)
 import Range hiding (mod)
 import Utils
 
@@ -83,13 +82,12 @@ data DateTime v = DateTime
     Detail
 
 type NList v i =
-    ( Reduce (v i) i
-    , SplitUp i (v i)
+    ( Applicative v
+    , Functor v
+    , Reduce (v i) i
     , Reverse (v i)
-    , Map i i (v i) (v i)
+    , SplitUp i (v i)
     , Multiplicands i (v i)
-    , Combineable i i i (v i) (v i) (v i)
-    , Combineable i (Maybe i) i (v i) (v (Maybe i)) (v i)
     )
 
 -- | The number of days in a year.
@@ -113,7 +111,7 @@ dateOfYear f y n | n < 0 = dateOfYear f (y-1) (n + daysInYear f (y-1))
 -- | to split up the time portion
 -- TODO: Probably needs reversing?
 timeOfDay :: NList v Integer => Common v -> YMD -> Integer -> v Integer
-timeOfDay f ymd t = Vec.reverse $ splitUp t $ Vec.reverse $ timeSplits f ymd where
+timeOfDay f ymd t = reverse $ splitUp t $ reverse $ timeSplits f ymd where
 
 -- | The year, month, and day of a date rational
 largePart :: NList v Integer => Common v -> Rational -> YMD

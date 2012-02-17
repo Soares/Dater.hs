@@ -1,20 +1,13 @@
--- TODO: Remove unused language extensions
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Vector where
-import Data.Vec.Nat
+module TypeLevel.Vector where
+import Control.Applicative
 import Data.List (intercalate)
-import Prelude hiding (map, reverse)
+import Prelude hiding (reverse)
+import TypeLevel.Naturals
 
 type Vec0 = Vector N0
 type Vec1 = Vector N1
@@ -53,7 +46,12 @@ instance Functor (Vector n) => Functor (Vector (Succ n)) where
     fmap f (a:.v) = f a :. fmap f v
 
 
--- TODO: Instance monad
+instance Applicative (Vector N0) where
+    pure _ = Nil
+    _ <*> _ = Nil
+instance Applicative (Vector n) => Applicative (Vector (Succ n)) where
+    pure a = a :. pure a
+    (f:.fs) <*> (a:.as) = f a :. (fs <*> as)
 
 
 class Vec v where
@@ -91,18 +89,9 @@ instance Reduce (Vector n a) a where
     reduce f x (a:.v) = reduce f (f x a) v
 
 
-class Map a b u v
-    | u -> a
-    , v -> b
-    , a v -> u
-    , b u -> v
-    where
-    map :: (a -> b) -> u -> v
-instance Map a b (Vector n a) (Vector n b) where
-    map _ Nil = Nil
-    map f (a:.u) = f a :. map f u
-
-
+combine :: Applicative v => (a -> b -> c) -> v a -> v b -> v c
+combine f u v = f <$> u <*> v
+{- TODO: Superceded by Applicative
 class Combineable a b c u v w
     | u -> a
     , v -> b
@@ -116,6 +105,7 @@ instance Combineable a b c (Vector n a) (Vector n b) (Vector n c) where
     combine f (a:.u) (b:.v) = f a b :. combine f u v
     combine _ Nil Nil = Nil
     combine _ _ _ = error "Can't combine vectors of different length"
+    -}
 
 
 class (Reduce v a, Num a) => Multiplicands a v | v -> a where
@@ -138,7 +128,7 @@ instance Snoc a (Vector N0 a) (Vector N1 a) where
     snoc x Nil = x :. Nil
 instance Snoc a (Vector n a) (Vector (Succ n) a) =>
          Snoc a (Vector (Succ n) a) (Vector (Succ (Succ n)) a) where
-    snoc x (a:.v) = (a:.snoc x v)
+    snoc x (a:.v) = a :. snoc x v
 
 
 class Reverse v where
