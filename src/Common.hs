@@ -24,7 +24,7 @@ import Calendar
 import Control.Applicative
 import Data.Maybe
 import Data.Ratio hiding ((%))
-import TypeLevel.Vector
+import TypeLevel.List
 import Prelude hiding ((!!), reverse)
 import Range hiding (mod, start, end)
 import Utils
@@ -84,14 +84,14 @@ data DateTime v = DateTime
 
 class (Reduce v a, Num a) => Multiplicands a v | v -> a where
     multiplicands :: v -> v
-instance (Num a) => Multiplicands a (Vector n a) where
+instance (Num a) => Multiplicands a (List n a) where
     multiplicands Nil = Nil
     multiplicands (_:.v) = reduce (*) 1 v :. multiplicands v
 
 
 class (Integral a) => SplitUp a v | v -> a where
     splitUp :: a -> v -> v
-instance (Integral a) => SplitUp a (Vector n a) where
+instance (Integral a) => SplitUp a (List n a) where
     splitUp _ Nil = Nil
     splitUp n (a:.v) = mod n a :. splitUp (div n a) v
 
