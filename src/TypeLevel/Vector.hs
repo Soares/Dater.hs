@@ -36,6 +36,18 @@ data Vector n a where
 infixr :.
 
 
+instance Eq a => Eq (Vector N0 a) where (==) = const $ const True
+instance (Eq a, Eq (Vector n a)) => Eq (Vector (Succ n) a) where
+    (x:.v) == (y:.w) = x == y && v == w
+
+
+instance Ord a => Ord (Vector N0 a) where (<=) = const $ const True
+instance (Ord a, Ord (Vector n a)) => Ord (Vector (Succ n) a) where
+    (x:.v) <= (y:.w) | x < y = True
+                     | x == y = v <= w
+                     | otherwise = False
+
+
 instance (Show a, List (Vector n)) => Show (Vector n a) where
     show v = "<" ++ intercalate "," (fmap show $ toList v) ++ ">"
 
