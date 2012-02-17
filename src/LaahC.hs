@@ -1,11 +1,12 @@
 module LaahC where
-import Earthlike
+import Vector
+import Common
 
-ak :: EarthlikeFormat
-ak = Format ms ds ts where
+ak :: Common Vec3
+ak = Common ms ds ts b where
     ms = const (0, 12) -- Includes zero-month
 
-    ds y m d
+    ds y m
         | m == 0 && isLeapYear y = (0, 1)
         | m == 0 = (0, 0)
         | m `elem` [2, 5, 8, 11] = (1, 31)
@@ -16,3 +17,7 @@ ak = Format ms ds ts where
         | y `mod` 100 == 0 = False
         | y `mod` 4 == 0 = True
         | otherwise = False
+
+    ts = const $ fromList [10, 100, 100]
+    
+    b = 0

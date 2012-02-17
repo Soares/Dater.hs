@@ -1,3 +1,4 @@
+-- TODO: Remove unused language extensions
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -14,6 +15,27 @@ module Vector where
 import Data.Vec.Nat
 import Data.List (intercalate)
 import Prelude hiding (map, reverse)
+
+type Vec0 = Vector N0
+type Vec1 = Vector N1
+type Vec2 = Vector N2
+type Vec3 = Vector N3
+type Vec4 = Vector N4
+type Vec5 = Vector N5
+type Vec6 = Vector N6
+type Vec7 = Vector N7
+type Vec8 = Vector N8
+type Vec9 = Vector N9
+type Vec10 = Vector N10
+type Vec11 = Vector N11
+type Vec12 = Vector N12
+type Vec13 = Vector N13
+type Vec14 = Vector N14
+type Vec15 = Vector N15
+type Vec16 = Vector N16
+type Vec17 = Vector N17
+type Vec18 = Vector N18
+type Vec19 = Vector N19
 
 data Vector n a where
     Nil :: Vector N0 a
@@ -58,6 +80,7 @@ instance List (Vector N0) where
     fromList _ = error "Too many elements in list"
 instance List (Vector n) => List (Vector (Succ n)) where
     toList (a:.as) = a : toList as
+    fromList [] = error "Too few elements in list"
     fromList (x:xs) = x :. fromList xs
 
 
@@ -76,7 +99,7 @@ class Map a b u v
     where
     map :: (a -> b) -> u -> v
 instance Map a b (Vector n a) (Vector n b) where
-    map f Nil = Nil
+    map _ Nil = Nil
     map f (a:.u) = f a :. map f u
 
 
@@ -90,8 +113,9 @@ class Combineable a b c u v w
     where
     combine :: (a -> b -> c) -> u -> v -> w
 instance Combineable a b c (Vector n a) (Vector n b) (Vector n c) where
-    combine f Nil Nil = Nil
     combine f (a:.u) (b:.v) = f a b :. combine f u v
+    combine _ Nil Nil = Nil
+    combine _ _ _ = error "Can't combine vectors of different length"
 
 
 class (Reduce v a, Num a) => Multiplicands a v | v -> a where

@@ -68,7 +68,7 @@ type Detail = Rational
 -- | the year and month parameters.
 -- |
 -- | You need only supply an Date and this module will do the rest.
-data Common v = Cal
+data Common v = Common
     { months        :: Year -> Range
     , days          :: Year -> Month -> Range
     , timeSplits    :: NList v Integer => YMD -> v Integer
@@ -76,12 +76,11 @@ data Common v = Cal
     }
 
 data DateTime v = DateTime
-    { year   :: Year
-    , month  :: Month
-    , day    :: Day
-    , time   :: NList v Integer => v Integer
-    , detail :: Detail
-    }
+    Year
+    Month
+    Day
+    (NList v Integer => v Integer)
+    Detail
 
 type NList v i =
     ( Reduce (v i) i
@@ -188,12 +187,11 @@ dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
 
 instance NList v Integer => Calendar (Common v) where
     data Delta (Common v) = Delta
-        { dYear   :: Maybe Year
-        , dMonth  :: Maybe Month
-        , dDay    :: Maybe Day
-        , dTime   :: v (Maybe Integer)
-        , dDetail :: Maybe Detail
-        }
+        (Maybe Year)
+        (Maybe Month)
+        (Maybe Day)
+        (v (Maybe Integer))
+        (Maybe Detail)
 
     -- TODO:
     display _ _ = []
