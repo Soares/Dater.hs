@@ -89,39 +89,6 @@ instance Reduce (Vector n a) a where
     reduce f x (a:.v) = reduce f (f x a) v
 
 
-combine :: Applicative v => (a -> b -> c) -> v a -> v b -> v c
-combine f u v = f <$> u <*> v
-{- TODO: Superceded by Applicative
-class Combineable a b c u v w
-    | u -> a
-    , v -> b
-    , w -> c
-    , a v w -> u
-    , b u w -> v
-    , c v u -> w
-    where
-    combine :: (a -> b -> c) -> u -> v -> w
-instance Combineable a b c (Vector n a) (Vector n b) (Vector n c) where
-    combine f (a:.u) (b:.v) = f a b :. combine f u v
-    combine _ Nil Nil = Nil
-    combine _ _ _ = error "Can't combine vectors of different length"
-    -}
-
-
-class (Reduce v a, Num a) => Multiplicands a v | v -> a where
-    multiplicands :: v -> v
-instance (Num a) => Multiplicands a (Vector n a) where
-    multiplicands Nil = Nil
-    multiplicands (_:.v) = reduce (*) 1 v :. multiplicands v
-
-
-class (Integral a) => SplitUp a v | v -> a where
-    splitUp :: a -> v -> v
-instance (Integral a) => SplitUp a (Vector n a) where
-    splitUp _ Nil = Nil
-    splitUp n (a:.v) = mod n a :. splitUp (div n a) v
-
-
 class Snoc a v w | v a -> w, w -> v a, v -> a where
     snoc :: a -> v -> w
 instance Snoc a (Vector N0 a) (Vector N1 a) where

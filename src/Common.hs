@@ -81,6 +81,21 @@ data DateTime v = DateTime
     (NList v Integer => v Integer)
     Detail
 
+
+class (Reduce v a, Num a) => Multiplicands a v | v -> a where
+    multiplicands :: v -> v
+instance (Num a) => Multiplicands a (Vector n a) where
+    multiplicands Nil = Nil
+    multiplicands (_:.v) = reduce (*) 1 v :. multiplicands v
+
+
+class (Integral a) => SplitUp a v | v -> a where
+    splitUp :: a -> v -> v
+instance (Integral a) => SplitUp a (Vector n a) where
+    splitUp _ Nil = Nil
+    splitUp n (a:.v) = mod n a :. splitUp (div n a) v
+
+
 type NList v i =
     ( Applicative v
     , Functor v
@@ -181,7 +196,8 @@ numDays f ymd = ydays + mdays + ddays where
 -- | Turn a Time into a fraction of a day
 dayFraction :: NList v Integer => Common v -> YMD -> v Integer -> Rational
 dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
-    timeInSeconds = reduce (+) 1 $ combine (*) ts (multiplicands $ timeSplits f ymd)
+    timeInSeconds = reduce (+) 1 $ (*) <$> ts <*> ss
+    ss = multiplicands $ timeSplits f ymd
 
 instance NList v Integer => Calendar (Common v) where
     data Delta (Common v) = Delta
@@ -219,17 +235,8 @@ msub i = maybe i (i -)
 operation :: NList v Integer => Operation -> DateTime v -> Delta (Common v) -> DateTime v
 operation op (DateTime y m d ts x) (Delta my mm md mt mx) = DateTime
     (op y my) (op m mm) (op d md)
-    (combine op ts mt)
+    (op <$> ts <*> mt)
     (op (numerator x) (numerator <$> mx) % op (denominator x) (denominator <$> mx))
 
 change :: NList v Integer => Operation -> Common v -> Rational -> Delta (Common v) -> Rational
 change op c r = rebuild c . operation op (breakDown c r)
-
-{-
-fake :: EarthlikeFormat -> Relative -> Rational
-fake c rel = rebuild c (y, m, d, ts, top % bot) where
-    y:m:d:xs = pad 0 8 $ map (fromMaybe 0) rel
-    ts = init $ init xs
-    top = last $ init xs
-    bot = last xs
--}
