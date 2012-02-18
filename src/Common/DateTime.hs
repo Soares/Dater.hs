@@ -30,6 +30,7 @@ type YMD = (Year, Month, Day)
 -- | Leftover detail
 type Detail = Rational
 
+type Intlike a = (Integral a, Show a, Read a)
 type NList v i =
     ( Applicative v
     , ParseTime v i
@@ -68,70 +69,65 @@ addT (d, a) t = (d{time=t}, a)
 parseYMDT era = addT <$> (addMD <$> parseY era <*> parseMD) <*> parseTime
 parseYMDTX era = addTX <$> parseYMD era <*> parseTX
 parseYMD era = addMD <$> parseY era <*> parseMD
-parseY era = (,) <$> fmap fromY parseA <*> whited era
+parseY era = (,) <$> fmap fromY parseInt <*> whited era
 
 parseMD :: GenParser Char st (Month, Day)
 parseTX :: ParseTime v a => GenParser Char st (v a, Detail)
 parseX :: GenParser Char st Detail
-parseMD = (,) <$> (parseA <* slash) <*> parseA
+parseMD = (,) <$> (parseInt <* slash) <*> parseInt
 parseTX = (,) <$> parseFull <*> parseX
-parseX = (%) <$> (parseA <* slash) <*> parseA
+parseX = (%) <$> (parseInt <* slash) <*> parseInt
 
--- TODO: Change to integral
-parseA :: Read a => GenParser Char st a
-parseA = many1 anyChar >>= liftReadS reads
+parseInt :: Intlike a => GenParser Char st a
+parseInt = read <$> many1 digit
 
 
-class (Show a, Read a) => ParseTime v a where
+class Intlike a => ParseTime v a where
     parseTime :: GenParser Char st (v a)
     parseTime = try parseFull <|> parsePartial <?> "a Time"
     parseFull :: GenParser Char st (v a)
     parsePartial :: GenParser Char st (v a)
     showTime :: v a -> String
 
-instance (Show a, Read a) => ParseTime L0 a where
+instance Intlike a => ParseTime L0 a where
     parseFull = pure Nil
     parsePartial = pure Nil
     showTime = const ""
 
-instance (Show a, Read a) => ParseTime L1 a where
-    parseFull = pure <$> parseA
-    parsePartial = pure <$> parseA
+instance Intlike a => ParseTime L1 a where
+    parseFull = pure <$> parseInt
+    parsePartial = pure <$> parseInt
     showTime (a:._) = show a
 
-instance ( Show a
-         , Read a
+instance ( Intlike a
          , DottedList (List n) a
          ) => ParseTime (List (Succ (Succ n))) a where
-    parseFull = (:.) <$> (parseA <* colin) <*>
-        ((:.) <$> parseA <*> parseFullDots)
-    parsePartial = (:.) <$> (parseA <* colin) <*>
-        ((:.) <$> parseA <*> parsePartialDots)
+    parseFull = (:.) <$> (parseInt <* colin) <*>
+        ((:.) <$> parseInt <*> parseFullDots)
+    parsePartial = (:.) <$> (parseInt <* colin) <*>
+        ((:.) <$> parseInt <*> parsePartialDots)
     showTime (a:.b:.v) = show a ++ ":" ++
         intercalate "." (map show $ b : relevantDots v)
 
 
-class (Show a, Read a, Num a) => DottedList v a where
+class Intlike a => DottedList v a where
     parseFullDots :: GenParser Char st (v a)
     parsePartialDots :: GenParser Char st (v a)
     relevantDots :: v a -> [a]
     dots :: v a -> [a]
 
-instance (Show a, Read a, Num a) => DottedList L0 a where
+instance Intlike a => DottedList L0 a where
     parseFullDots = pure Nil
     parsePartialDots = pure Nil
     relevantDots = const []
     dots = const []
-instance ( Num a
-         , Eq a
-         , Show a
-         , Read a
+instance ( Intlike a
          , DottedList (List n) a
          , Applicative (List n)
          ) => DottedList (List (Succ n)) a where
-    parseFullDots = (:.) <$> (dot *> parseA) <*> parseFullDots
+    parseFullDots = (:.) <$> (dot *> parseInt) <*> parseFullDots
     parsePartialDots =
-        try ((:.) <$> (dot *> parseA) <*> parsePartialDots)
+        try ((:.) <$> (dot *> parseInt) <*> parsePartialDots)
         <|> pure (pure 0)
     relevantDots (0:.v) | all (== 0) (relevantDots v) = []
     relevantDots v = dots v
