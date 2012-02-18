@@ -46,8 +46,7 @@ data DateTime n
     , detail :: Detail
     }
 
-dateTimeList dt = (year dt : month dt : day dt : ts, detail dt)
-    where ts = toList (time dt)
+dateTimeList dt = (year dt : month dt : day dt : toList (time dt), detail dt)
 
 instance Time n => Eq (DateTime n) where (==) = (==) `on` dateTimeList
 instance Time n => Ord (DateTime n) where (<=) = (<=) `on` dateTimeList
@@ -134,7 +133,7 @@ instance ( Intlike a
     parsePartialDots =
         try ((:.) <$> (dot *> parseInt) <*> parsePartialDots)
         <|> pure (pure 0)
-    relevantDots (0:.v) | all (== 0) (relevantDots v) = []
+    relevantDots (0:.v) | all (== 0) (dots v) = []
     relevantDots v = dots v
     dots (a:.v) = a : dots v
 
