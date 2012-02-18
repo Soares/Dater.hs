@@ -7,12 +7,8 @@ import Common.Parsec
 import Common.Time
 import Control.Applicative hiding ((<|>))
 import Data.Function (on)
-import Data.List (intercalate)
-import Data.Maybe (listToMaybe)
-import Data.Ratio ((%))
 import Text.ParserCombinators.Parsec
 import TypeLevel.List
-import TypeLevel.Naturals
 
 data DateTime n
     = DateTime
@@ -62,11 +58,17 @@ parseTX = (,) <$> parseTime <*> (dot *> rational)
 
 
 -- | Helper builders
+addMD :: forall n a. (DateTime n, a) -> (Month, Day) -> (DateTime n, a)
 addMD (d, a) (m, y) = (d{month=m, day=y}, a)
+
+addTX :: forall n a. (DateTime n, a) -> (List n Integer, Detail) -> (DateTime n, a)
 addTX (d, a) (t, x) = (d{time=t, detail=x}, a)
+
+addT :: forall n a. (DateTime n, a) -> List n Integer -> (DateTime n, a)
 addT (d, a) t = (d{time=t}, a)
 
 
 
 -- | Implementation-specific helpers
+dateTimeList :: forall n. Listable (List n) => DateTime n -> ([Integer], Detail)
 dateTimeList dt = (year dt : month dt : day dt : toList (time dt), detail dt)

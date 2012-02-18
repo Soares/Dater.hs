@@ -10,21 +10,12 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Common
-    ( Common(..)
-    , Year
-    , Month
-    , Day
-    , YMD
-    , Detail
-    -- , breakDown
-    -- , rebuild
-    ) where
-import Calendar
+module Common where
 import Common.DateTime hiding (Time)
 import Control.Applicative
 import Data.Maybe
 import Data.Ratio hiding ((%))
+import Date
 import TypeLevel.List hiding (length)
 import TypeLevel.Naturals
 import Prelude hiding ((!!), reverse)
@@ -65,37 +56,7 @@ data Common n = Common
     { months     :: Year -> Range
     , days       :: Year -> Month -> Range
     , timeSplits :: YMD -> List n Integer
-    , start      :: Rational
     }
-
-
-class (Reduce v a, Num a) => Multiplicands a v | v -> a where
-    multiplicands :: v -> v
-instance (Num a) => Multiplicands a (List n a) where
-    multiplicands Nil = Nil
-    multiplicands (_:.v) = reduce (*) 1 v :. multiplicands v
-
-
-class (Integral a) => SplitUp a v | v -> a where
-    splitUp :: a -> v -> v
-instance (Integral a) => SplitUp a (List n a) where
-    splitUp _ Nil = Nil
-    splitUp n (a:.v) = mod n a :. splitUp (div n a) v
-
-
-type Time n =
-    ( Applicative (List n)
-    , Listable (List n)
-    , Reduce (List n Integer) Integer
-    , Reverse (List n Integer)
-    , SplitUp Integer (List n Integer)
-    , Multiplicands Integer (List n Integer)
-    , ParseTime (List n) Integer
-    , DottedList (List n) Integer
-    , Eq (List n Integer)
-    , Ord (List n Integer)
-    , Natural n
-    )
 
 -- | The number of days in a year.
 -- | Defaults to counting the number of days in all months that year.
@@ -146,18 +107,6 @@ timePart f = floor . dayPart f
 detailPart :: Time n => Common n -> Rational -> Detail
 detailPart f = leftover . dayPart f
 
--- | Split a rational into its component parts
-breakDown :: Time n => Common n -> Rational -> DateTime n
-breakDown f r = DateTime y m d (smallPart f r) (detailPart f r)
-    where (y, m, d) = largePart f r
-
--- | Rebuild a rational from its component parts
-rebuild :: Time n => Common n -> DateTime n -> Rational
-rebuild f (DateTime y m d t x) = a + b + c where
-    a = toRational $ numDays f (y, m, d)
-    b = dayFraction f (y, m, d) t
-    c = x % timeUnitsPerDay f (y, m, d)
-
 -- | Adjust the year and month until they are sane, i.e.
 -- | 12/-1 becomes 11/12
 normalizeYM :: Time n => Common n -> Year -> Month -> (Year, Month)
@@ -191,22 +140,42 @@ dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
     timeInSeconds = reduce (+) 1 $ (*) <$> ts <*> ss
     ss = multiplicands $ timeSplits f ymd
 
-instance Time n => Calendar (Common n) where
-    data Delta (Common n) = Delta
-        (Maybe Year)
-        (Maybe Month)
-        (Maybe Day)
-        (List n (Maybe Integer))
-        (Maybe Detail)
+instance Time n => Date (Common n) where
+    -- TODO: newtype?
+    data DateTime (Common n) = X (DateTime n)
+    data Delta (Common n) = D (Delta n)
+    
+    dateTime com rat = X $ DateTime y m d ts x where
+        (y, m, d) = largePart com rat
+        ts = smallPart com rat
+        x = detailPart com rat
 
-    -- TODO:
-    display _ _ = []
-    parse _ _ = []
-    plus = change madd
-    minus = change msub
+    rational com (X (DateTime y m d ts x)) = a + b + c where
+        a = toRational $ numDays com (y, m, d)
+        b = dayFraction com (y, m, d) ts
+        c = x % timeUnitsPerDay com (y, m, d)
+
+    plus = change $ maybe <*> (+)
+    minus = change $ maybe <*> (-)
     clobber = change fromMaybe
 
-    beginning = start
+change :: Time n =>
+    (Rational -> Maybe Rational -> Rational) ->
+    Common n -> Rational -> Rational
+    Rational
+change fn com x y = rational $ change fn (dateTime com x) (dateTime com y)
+
+op :: Time n =>
+    (Rational -> Maybe Rational -> Rational) ->
+    DateTime (Common n) -> DateTime (Common n) ->
+    DateTime (Common n)
+op fr (X (DateTime y m d ts x)) (D (Delta my mm md tms mx)) = DateTime
+    (fn y my)
+    (fn m mm)
+    (fn d md)
+    (fn <$> ts <*> tms)
+    (fr x mx)
+    where fn x y = round $ f (toRational x) (toRational <$> y)
 
 -- TODO
 instance Read (Common v) where
@@ -217,18 +186,3 @@ instance Read (Delta (Common n)) where
     readsPrec _ _ = []
 instance Show (Delta (Common n)) where
     show _ = []
-
-type Operation = Integer -> Maybe Integer -> Integer
-
-madd, msub :: Operation
-madd i = maybe i (i +)
-msub i = maybe i (i -)
-
-operation :: Time n => Operation -> DateTime n -> Delta (Common n) -> DateTime n
-operation op (DateTime y m d ts x) (Delta my mm md mt mx) = DateTime
-    (op y my) (op m mm) (op d md)
-    (op <$> ts <*> mt)
-    (op (numerator x) (numerator <$> mx) % op (denominator x) (denominator <$> mx))
-
-change :: Time n => Operation -> Common n -> Rational -> Delta (Common n) -> Rational
-change op c r = rebuild c . operation op (breakDown c r)

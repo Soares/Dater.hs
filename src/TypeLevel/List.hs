@@ -31,23 +31,27 @@ type L18 = List N18
 type L19 = List N19
 
 
+
 data List n a where
     Nil :: List N0 a
     (:.) :: Natural n => a -> List n a -> List (Succ n) a
 infixr :.
 
 
-instance (Eq a, Natural n) => Eq (List n a) where
-    Nil == Nil = True
+
+instance Eq a => Eq (L0 a) where (==) = const $ const True
+instance (Eq a, Eq (List n a)) => Eq (List (Succ n) a) where
     (x:.v) == (y:.w) = x == y && v == w
 
 
-instance (Ord a, Natural n) => Ord (List n a) where
-    Nil <= Nil = True
+
+instance Ord a => Ord (L0 a) where (<=) = const $ const True
+instance (Ord a, Ord (List n a)) => Ord (List (Succ n) a) where
     (x:.v) <= (y:.w)
         | x < y = True
         | x == y = v <= w
         | otherwise = False
+
 
 
 instance ( Num a
@@ -62,6 +66,7 @@ instance ( Num a
     fromInteger = pure . fromInteger
 
 
+
 instance ( Fractional a
          , Natural n
          , Applicative (List n)
@@ -71,8 +76,10 @@ instance ( Fractional a
     fromRational = pure . fromRational
 
 
+
 instance (Show a, Listable (List n)) => Show (List n a) where
     show v = "<" ++ intercalate "," (fmap show $ toList v) ++ ">"
+
 
 
 instance Functor L0 where
@@ -80,6 +87,7 @@ instance Functor L0 where
 
 instance Functor (List n) => Functor (List (Succ n)) where
     fmap f (a:.v) = f a :. fmap f v
+
 
 
 instance Applicative L0 where
@@ -118,12 +126,14 @@ instance (Natural n, Listable (List n)) => Listable (List (Succ n)) where
         else head xs :. fromList (tail xs)
 
 
-class Reduce v a | v -> a where
-    reduce :: (a -> a -> a) -> a -> v -> a
 
-instance Reduce (List n a) a where
+class Reduce v a | v -> a where
+    reduce :: (a -> a -> a) -> a -> v a -> a
+
+instance Reduce (List n) a where
     reduce _ a Nil = a
     reduce f x (a:.v) = reduce f (f x a) v
+
 
 
 class Concat u v w | u v -> w where
@@ -141,22 +151,24 @@ instance (Natural n, Natural m, Natural o, Concat (List n) (List m) (List o)) =>
     concat (a:.v) w = a :. concat v w
 
 
-class Snoc a v w | v a -> w, w -> v a, v -> a where
-    snoc :: a -> v -> w
 
-instance Snoc a (L0 a) (L1 a) where
+class Snoc v w where
+    snoc :: a -> v a -> w a
+
+instance Snoc L0 L1 where
     snoc x Nil = x :. Nil
 
-instance Snoc a (List n a) (List (Succ n) a) =>
-         Snoc a (List (Succ n) a) (List (Succ (Succ n)) a) where
+instance Snoc (List n) (List (Succ n)) =>
+         Snoc (List (Succ n)) (List (Succ (Succ n))) where
     snoc x (a:.v) = a :. snoc x v
 
 
-class Reverse v where
-    reverse :: v -> v
 
-instance Reverse (List N0 a) where
+class Reverse v where
+    reverse :: v a -> v a
+
+instance Reverse (List N0) where
     reverse _ = Nil
 
-instance (Snoc a (List n a) (List (Succ n) a), Reverse (List n a)) => Reverse (List (Succ n) a) where
+instance (Snoc (List n) (List (Succ n)), Reverse (List n)) => Reverse (List (Succ n)) where
     reverse (a:.v) = snoc a (reverse v)

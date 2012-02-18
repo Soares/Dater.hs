@@ -7,12 +7,8 @@ import Common.Time
 import Common.Parsec (Parse, whitespace, slash, int, rational, dot)
 import Control.Applicative hiding ((<|>))
 import Data.Function (on)
-import Data.List (intercalate)
-import Data.Maybe (listToMaybe)
-import Data.Ratio ((%), numerator, denominator)
 import Text.ParserCombinators.Parsec
 import TypeLevel.List
-import TypeLevel.Naturals
 import Prelude hiding (break)
 
 data Delta n
@@ -31,6 +27,7 @@ instance Time n => Num (Delta n) where
     abs = alter $ liftA abs
     signum = alter $ liftA signum
     fromInteger n = Delta (Just n) Nothing Nothing (pure Nothing) Nothing
+-- TODO: Instance of whatever gives us clobber
 
 instance Time n => Eq (Delta n) where (==) = (==) `on` deltaList
 instance Time n => Ord (Delta n) where (<=) = (<=) `on` deltaList
@@ -88,6 +85,7 @@ break (Delta y m d ts x) = x : (toRational <$> y) : (toRational <$> m) : (toRati
 
 build :: Time n => [Maybe Rational] -> Delta n
 build (x:y:m:d:ts) = Delta (round <$> y) (round <$> m) (round <$> d) (fmap round <$> fromList ts) x
+build _ = error "Build used on a list that did not come from break"
 
 alter :: Time n => (Maybe Rational -> Maybe Rational) -> Delta n -> Delta n
 alter f = build . fmap f . break

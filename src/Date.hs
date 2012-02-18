@@ -1,4 +1,5 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Date
     ( Date(Date)
     , normalize
@@ -10,6 +11,17 @@ import Calendar
 import Control.Category ((.))
 import Data.Function ( on )
 import Prelude hiding ((.), id)
+
+class ( ...
+      , ...
+      ) => Date c where
+    data DateTime c :: *
+    data Delta c :: *
+
+    dateTime :: c -> Rational -> DateTime c
+    rational :: c -> DateTime c -> Rational
+    plus :: c -> Rational -> Delta c -> Rational
+
 
 -- | Dates are stored as rationals in a calendar.
 -- | Calendars are used to convert dates into a normalized form.
