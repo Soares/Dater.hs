@@ -8,6 +8,10 @@ module TypeLevel.Naturals where
 data Zero
 data Succ a
 
+class Natural
+instance Zero Natural
+instance Natural n => Natural (Succ n)
+
 type N0  = Zero
 type N1  = Succ N0
 type N2  = Succ N1
