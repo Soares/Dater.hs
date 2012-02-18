@@ -5,14 +5,33 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Common.Time (Year, Month, Day, Time, Detail, parseTime) where
-import Common.Parsec (Parse, colin, dot)
+module Common.Time
+    ( Year
+    , Month
+    , Day
+    , Time
+    , Detail
+    , parseTime
+    , splitUp
+    , dotSep
+    , multiplicands
+    ) where
+import Common.Parsec (Parser, Parseable(parse), colin, dot)
 import Control.Applicative hiding ((<|>))
 import Data.List (intercalate)
-import Text.ParserCombinators.Parsec hiding (parse)
+import Text.ParserCombinators.Parsec hiding (Parser, parse)
 import TypeLevel.List
 import TypeLevel.Naturals
 import Prelude hiding (break)
+
+-- | Separate a list by dots
+class DotSep v where dotSep :: Show a => v a -> String
+
+instance Natural n => DotSep (List n) where
+    dotSep Nil = ""
+    dotSep (x:.Nil) = show x
+    dotSep (x:.xs) = show x ++ "." ++ dotSep xs
+
 
 -- | Given a time that is ordeded large unit to small unit (24:.60:.60:.Nil),
 -- | break it into the multiplicands that allow the Time to be combined
@@ -43,11 +62,13 @@ type Day = Integer
 type Time n =
     ( Applicative (List n)
     , Reduce (List n) Integer
+    , Reverse (List n)
     , Multiplicands (List n) Integer
     , SplitUp Integer (List n)
-    , Listable (List n)
+    , FromList (List n)
     , ParseTime (List n) Integer
     , ParseTime (List n) (Maybe Integer)
+    , DotSep (List n)
     , DottedList (List n) Integer
     , DottedList (List n) (Maybe Integer)
     , Natural n
@@ -55,13 +76,12 @@ type Time n =
 type Detail = Rational
 
 
-
 class ParseTime v a where
-    parseTime    :: Parse (v a)
+    parseTime    :: Parser (v a)
     parseTime = try parseFull <|> parsePartial <?> "time"
 
-    parseFull    :: Parse (v a)
-    parsePartial :: Parse (v a)
+    parseFull    :: Parser (v a)
+    parsePartial :: Parser (v a)
     showTime     :: v a -> String
 
 instance ParseTime L0 a where
@@ -87,8 +107,8 @@ instance ( TimeElem a
 
 
 class DottedList v a where
-    fullDots :: Parse (v a)
-    someDots :: Parse (v a)
+    fullDots :: Parser (v a)
+    someDots :: Parser (v a)
     relevantDots :: v a -> [a]
     dots :: v a -> [a]
 
@@ -113,18 +133,15 @@ instance ( TimeElem a
 
 
 
-class Eq a => TimeElem a where
-    parse :: Parse a
+class (Parseable a, Eq a) => TimeElem a where
     display :: a -> String
     none :: a
 
 instance TimeElem Integer where
-    parse = read <$> many1 digit -- TODO: remove int/maybeInt
     display = show
     none = 0
 
 instance TimeElem (Maybe Integer) where
-    parse = optionMaybe $ read <$> many1 digit
     display = maybe "" show
     none = Nothing
 

@@ -77,7 +77,7 @@ instance ( Fractional a
 
 
 
-instance (Show a, Listable (List n)) => Show (List n a) where
+instance (Show a, Natural n) => Show (List n a) where
     show v = "<" ++ intercalate "," (fmap show $ toList v) ++ ">"
 
 
@@ -100,30 +100,33 @@ instance (Natural n, Applicative (List n)) =>
     (f:.fs) <*> (a:.as) = f a :. (fs <*> as)
 
 
-class Listable v where
+class Listlike v where
     length :: v a -> Integer
     toList :: v a -> [a]
-    fromList :: [a] -> v a
     getElem :: Int -> v a -> a
     setElem :: Int -> a -> v a -> v a
 
-instance Listable L0 where
+instance Natural n => Listlike (List n) where
     length Nil = 0
-    toList Nil = []
-    fromList [] = Nil
-    fromList _ = error "Too many elements in list"
-    getElem _ _ = error "List index out of bounds"
-    setElem _ _ _ = error "List index out of bounds"
-
-instance (Natural n, Listable (List n)) => Listable (List (Succ n)) where
     length (_:.as) = 1 + length as
+    toList Nil = []
     toList (a:.as) = a : toList as
+    getElem _ Nil = error "index out of bounds"
     getElem 0 (a:._) = a
     getElem n (_:.as) = getElem (n-1) as
+    setElem _ _ Nil = error "index out of bounds"
     setElem 0 x (_:.as) = x :. as
     setElem n x (a:.as) = a :. setElem (n-1) x as
-    fromList xs = if null xs then error "Too few elements in list"
-        else head xs :. fromList (tail xs)
+
+
+class FromList v where
+    fromList :: [a] -> v a
+instance FromList L0 where
+    fromList [] = Nil
+    fromList _ = error "too many elements for list"
+instance (Natural n, FromList (List n)) => FromList (List (Succ n)) where
+    fromList (x:xs) = x :. fromList xs
+    fromList _ = error "too few elements for list"
 
 
 

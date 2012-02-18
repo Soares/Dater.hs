@@ -1,26 +1,26 @@
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module Common where
-import Common.DateTime hiding (Time)
+import Common.Time
+import Common.Delta
+import Common.DateTime hiding (parseInEra, showInEra)
+import Common.Parsec
 import Control.Applicative
-import Data.Maybe
+import Control.Arrow
+import Data.Maybe (fromMaybe)
 import Data.Ratio hiding ((%))
-import Date
+import qualified Date
+import qualified Common.DateTime as DateTime
+import Date (Date(plus, minus, clobber, rational, dateTime))
 import TypeLevel.List hiding (length)
-import TypeLevel.Naturals
 import Prelude hiding ((!!), reverse)
 import Range hiding (mod, start, end)
-import Utils
+import Utils ((!!), (%), around, leftover)
 type YMD = (Year, Month, Day)
 
 -- | Dates are measured as a Rational, measuring days since the 'beginning'
@@ -140,11 +140,18 @@ dayFraction f ymd ts = timeInSeconds % timeUnitsPerDay f ymd where
     timeInSeconds = reduce (+) 1 $ (*) <$> ts <*> ss
     ss = multiplicands $ timeSplits f ymd
 
+
+deriving instance Num (Delta n) => Num (Date.Delta (Common n))
+deriving instance Show (Delta n) => Show (Date.Delta (Common n))
+deriving instance Parseable (Delta n) => Parseable (Date.Delta (Common n))
+
 instance Time n => Date (Common n) where
-    -- TODO: newtype?
-    data DateTime (Common n) = X (DateTime n)
-    data Delta (Common n) = D (Delta n)
-    
+    newtype DateTime (Common n) = X (DateTime n)
+    newtype Delta (Common n) = D (Delta n)
+
+    parseInEra e = first X <$> DateTime.parseInEra e
+    showInEra e (X d) = DateTime.showInEra e d
+
     dateTime com rat = X $ DateTime y m d ts x where
         (y, m, d) = largePart com rat
         ts = smallPart com rat
@@ -159,30 +166,22 @@ instance Time n => Date (Common n) where
     minus = change $ maybe <*> (-)
     clobber = change fromMaybe
 
+
 change :: Time n =>
     (Rational -> Maybe Rational -> Rational) ->
-    Common n -> Rational -> Rational
+    Common n -> Rational -> Date.Delta (Common n) ->
     Rational
-change fn com x y = rational $ change fn (dateTime com x) (dateTime com y)
+change fn com x delta = rational com $ op fn (dateTime com x) delta
+
 
 op :: Time n =>
     (Rational -> Maybe Rational -> Rational) ->
-    DateTime (Common n) -> DateTime (Common n) ->
-    DateTime (Common n)
-op fr (X (DateTime y m d ts x)) (D (Delta my mm md tms mx)) = DateTime
+    Date.DateTime (Common n) -> Date.Delta (Common n) ->
+    Date.DateTime (Common n)
+op fr (X (DateTime y m d ts x)) (D (Delta my mm md tms mx)) = X $ DateTime
     (fn y my)
     (fn m mm)
     (fn d md)
     (fn <$> ts <*> tms)
     (fr x mx)
-    where fn x y = round $ f (toRational x) (toRational <$> y)
-
--- TODO
-instance Read (Common v) where
-    readsPrec _ _ = []
-instance Show (Common v) where
-    show _ = []
-instance Read (Delta (Common n)) where
-    readsPrec _ _ = []
-instance Show (Delta (Common n)) where
-    show _ = []
+    where fn a b = round $ fr (toRational a) (toRational <$> b)
