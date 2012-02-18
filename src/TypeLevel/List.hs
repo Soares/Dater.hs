@@ -33,20 +33,21 @@ type L19 = List N19
 
 data List n a where
     Nil :: List N0 a
-    (:.) :: a -> List n a -> List (Succ n) a
+    (:.) :: Natural n => a -> List n a -> List (Succ n) a
 infixr :.
 
 
-instance Eq a => Eq (List N0 a) where (==) = const $ const True
-instance (Eq a, Eq (List n a)) => Eq (List (Succ n) a) where
+instance (Eq a, Natural n) => Eq (List n a) where
+    Nil == Nil = True
     (x:.v) == (y:.w) = x == y && v == w
 
 
-instance Ord a => Ord (List N0 a) where (<=) = const $ const True
-instance (Ord a, Ord (List n a)) => Ord (List (Succ n) a) where
-    (x:.v) <= (y:.w) | x < y = True
-                     | x == y = v <= w
-                     | otherwise = False
+instance (Ord a, Natural n) => Ord (List n a) where
+    Nil <= Nil = True
+    (x:.v) <= (y:.w)
+        | x < y = True
+        | x == y = v <= w
+        | otherwise = False
 
 
 instance ( Num a
@@ -85,7 +86,8 @@ instance Applicative L0 where
     pure _ = Nil
     _ <*> _ = Nil
 
-instance Applicative (List n) => Applicative (List (Succ n)) where
+instance (Natural n, Applicative (List n)) =>
+    Applicative (List (Succ n)) where
     pure a = a :. pure a
     (f:.fs) <*> (a:.as) = f a :. (fs <*> as)
 
@@ -105,7 +107,7 @@ instance Listable L0 where
     getElem _ _ = error "List index out of bounds"
     setElem _ _ _ = error "List index out of bounds"
 
-instance Listable (List n) => Listable (List (Succ n)) where
+instance (Natural n, Listable (List n)) => Listable (List (Succ n)) where
     length (_:.as) = 1 + length as
     toList (a:.as) = a : toList as
     getElem 0 (a:._) = a
@@ -134,7 +136,7 @@ instance Concat L0 (List n) (List n) =>
          Concat L0 (List (Succ n)) (List (Succ n)) where
     concat _ v = v
 
-instance Concat (List n) (List m) (List o) =>
+instance (Natural n, Natural m, Natural o, Concat (List n) (List m) (List o)) =>
          Concat (List (Succ n)) (List m) (List (Succ o)) where
     concat (a:.v) w = a :. concat v w
 

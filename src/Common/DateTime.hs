@@ -1,59 +1,58 @@
--- TODO: Prune these
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Common.DateTime where
 import Control.Applicative hiding ((<|>))
+import Data.Function (on)
 import Data.List (intercalate)
 import Data.Maybe (listToMaybe)
 import Data.Ratio ((%))
 import Text.ParserCombinators.Parsec
 import TypeLevel.List
 import TypeLevel.Naturals
---TODO: Put reader/shower in data Common
+type Parse = GenParser Char ()
 
+-- | An earthlike date consists of the following:
+-- | An outer unit
 type Year = Integer
 -- | A primary unit, dependent upon the secondary unit
 type Month = Integer
 -- | A secondary unit
 type Day = Integer
--- | (Year, Month, and Day can be abbreviated YMD)
-type YMD = (Year, Month, Day)
 -- | Leftover detail
 type Detail = Rational
 
 type Intlike a = (Integral a, Show a, Read a)
-type NList v i =
-    ( Applicative v
-    , ParseTime v i
-    , DottedList v i
-    , Eq (v i)
-    , Ord (v i)
-    , Num (v i)
-    , Num i
+type Time n =
+    ( Applicative (List n)
+    , Listable (List n)
+    , ParseTime (List n) Integer
+    , DottedList (List n) Integer
+    , Eq (List n Integer)
+    , Ord (List n Integer)
+    , Natural n
     )
 
-data DateTime v
+data DateTime n
     = DateTime
     { year   :: Year
     , month  :: Month
     , day    :: Day
-    , time   :: NList v Integer => v Integer
+    , time   :: List n Integer
     , detail :: Detail
     }
--- TODO: Eq, Ord instances
 
-parseDateTime :: NList v Integer =>
-    GenParser Char st a ->
-    GenParser Char st (DateTime v, a)
+dateTimeList dt = (year dt : month dt : day dt : ts, detail dt)
+    where ts = toList (time dt)
+
+instance Time n => Eq (DateTime n) where (==) = (==) `on` dateTimeList
+instance Time n => Ord (DateTime n) where (<=) = (<=) `on` dateTimeList
+
+parseDateTime :: forall n a. Time n => Parse a -> Parse (DateTime n, a)
 parseDateTime era =
     try (parseYMDTX era)
     <|> try (parseYMDT era)
@@ -61,32 +60,37 @@ parseDateTime era =
     <|> parseY era
     <?> "a DateTime"
 
-fromY y = DateTime y 0 0 (pure 0) 0
 addMD (d, a) (m, y) = (d{month=m, day=y}, a)
-addTX (d, a) (t, x) = (d{time=t, detail=x}, a)
-addT (d, a) t = (d{time=t}, a)
 
-parseYMDT era = addT <$> (addMD <$> parseY era <*> parseMD) <*> parseTime
-parseYMDTX era = addTX <$> parseYMD era <*> parseTX
+parseYMDT :: forall n a. Time n => Parse a -> Parse (DateTime n, a)
+parseYMDT era = addT <$> (addMD <$> base <*> parseMD) <*> parseTime where
+    base = parseY era :: Parse (DateTime n, a)
+    addT (d, a) t = (d{time=t}, a)
+parseYMDTX :: forall n a. Time n => Parse a -> Parse (DateTime n, a)
+parseYMDTX era = addTX <$> base <*> parseTX where
+    base = parseYMD era :: Parse (DateTime n, a)
+    addTX (d, a) (t, x) = (d{time=t, detail=x}, a)
+parseYMD :: forall n a. Time n => Parse a -> Parse (DateTime n, a)
 parseYMD era = addMD <$> parseY era <*> parseMD
+parseY :: forall n a. Time n => Parse a -> Parse (DateTime n, a)
 parseY era = (,) <$> fmap fromY parseInt <*> whited era
+    where fromY y = DateTime y 0 0 (pure 0) 0
 
-parseMD :: GenParser Char st (Month, Day)
-parseTX :: ParseTime v a => GenParser Char st (v a, Detail)
-parseX :: GenParser Char st Detail
+parseMD :: Parse (Month, Day)
+parseTX :: ParseTime v a => Parse (v a, Detail)
+parseX :: Parse Detail
 parseMD = (,) <$> (parseInt <* slash) <*> parseInt
 parseTX = (,) <$> parseFull <*> parseX
 parseX = (%) <$> (parseInt <* slash) <*> parseInt
 
-parseInt :: Intlike a => GenParser Char st a
+parseInt :: Intlike a => Parse a
 parseInt = read <$> many1 digit
 
-
 class Intlike a => ParseTime v a where
-    parseTime :: GenParser Char st (v a)
+    parseTime :: Parse (v a)
     parseTime = try parseFull <|> parsePartial <?> "a Time"
-    parseFull :: GenParser Char st (v a)
-    parsePartial :: GenParser Char st (v a)
+    parseFull :: Parse (v a)
+    parsePartial :: Parse (v a)
     showTime :: v a -> String
 
 instance Intlike a => ParseTime L0 a where
@@ -100,6 +104,7 @@ instance Intlike a => ParseTime L1 a where
     showTime (a:._) = show a
 
 instance ( Intlike a
+         , Natural n
          , DottedList (List n) a
          ) => ParseTime (List (Succ (Succ n))) a where
     parseFull = (:.) <$> (parseInt <* colin) <*>
@@ -109,10 +114,9 @@ instance ( Intlike a
     showTime (a:.b:.v) = show a ++ ":" ++
         intercalate "." (map show $ b : relevantDots v)
 
-
 class Intlike a => DottedList v a where
-    parseFullDots :: GenParser Char st (v a)
-    parsePartialDots :: GenParser Char st (v a)
+    parseFullDots :: Parse (v a)
+    parsePartialDots :: Parse (v a)
     relevantDots :: v a -> [a]
     dots :: v a -> [a]
 
@@ -122,6 +126,7 @@ instance Intlike a => DottedList L0 a where
     relevantDots = const []
     dots = const []
 instance ( Intlike a
+         , Natural n
          , DottedList (List n) a
          , Applicative (List n)
          ) => DottedList (List (Succ n)) a where
@@ -133,13 +138,13 @@ instance ( Intlike a
     relevantDots v = dots v
     dots (a:.v) = a : dots v
 
-colin, dot, slash, whitespace :: GenParser Char st ()
+colin, dot, slash, whitespace :: Parse ()
 colin = string ":" *> pure ()
 dot = string "." *> pure ()
 slash = string "/" *> pure ()
 whitespace = many1 (oneOf " \t") *> pure ()
 
-whited :: GenParser Char st a -> GenParser Char st a
+whited :: Parse a -> Parse a
 whited x = whitespace *> x <* whitespace
 
 liftReadS :: ReadS a -> String -> Parser a
