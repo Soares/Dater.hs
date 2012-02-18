@@ -39,6 +39,7 @@ import Utils
 -- |
 -- | An earthlike date consists of the following:
 -- | An outer unit
+-- TODO: Import from DateTime
 type Year = Integer
 -- | A primary unit, dependent upon the secondary unit
 type Month = Integer
