@@ -1,21 +1,51 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Earth where
+import Language.Haskell.TH
 import Vector
 import Common
 
-gregorian :: Common Vec3
-gregorian = Common ms ds ts b where
-    ms = const (1, 12)
-    ds y d
-        | d == 2 && isLeapYear y = (1, 29)
-        | d == 2 = (1, 28)
-        | d `elem` [9, 4, 6, 11] = (1, 30)
-        | otherwise = (1, 31)
-    ts = const $ fromList [24, 60, 60]
-    isLeapYear y
-        | y `mod` 400 == 0 = True
-        | y `mod` 100 == 0 = False
-        | y `mod` 4 == 0 = True
-        | otherwise = False
-    -- Year 1 is the 365th day after the theoretical
-    -- January 1, Year 0
-    b = 365
+data Year = Common | Leap deriving (Eq, Ord, Read, Show, Bounded, Enum)
+instance Common.Year Year where
+    typeFrom y
+        | y `mod` 400 == 0 = Leap
+        | y `mod` 100 == 0 = Common
+        | y `mod` 4 == 0 = Leap
+        | otherwise = Common
+
+
+data Month =
+    January | February  | March     |
+    April   | May       | June      |
+    July    | August    | September |
+    October | November  | December
+    deriving (Eq, Ord, Read, Show, Bounded, Enum)
+instance Common.Month Month where
+    firstDay _ _ = 1
+    daysIn Common February = 28
+    daysIn Leap February = 29
+    daysIn _ m | m `elem` [September, April, June, November] = 30
+               | otherwise = 31
+
+
+data Day =
+    Monday  | Tuesday    | Wednesday | Thursday |
+    Friday  | Saturday   | Sunday
+    deriving (Eq, Ord, Read, Show, Bounded, Enum)
+instance Common.Day Days where
+    startsOn = Sunday
+
+
+newtype Hour = H $(zMod 24) deriving (Eq, Ord, Read, Enum, Bounded, Num)
+instance Show Hour where show (H h) | h < 1 || h > 12 = show $ n $ h - 12
+instance Common.TimePart Hour
+
+
+newtype Minute = M $(zMod 60) deriving (Eq, Ord, Read, Show, Enum, Bounded, Num)
+instance Common.TimePart Minute
+
+
+newtype Second = S $(zMod 60) deriving (Eq, Ord, Read, Show, Enum, Bounded, Num)
+instance Common.TimePart Second
+    
+
+instance Common (Year |/| Month |/| Day) (Hour |:| Minute |:| Second)
