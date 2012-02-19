@@ -12,8 +12,8 @@ module Common.Time
     , Time
     , Detail
     , parseTime
+    , showTime
     , splitUp
-    , dotSep
     , multiplicands
     ) where
 import Common.Parsec (Parser, Parseable(parse), colin, dot)
@@ -23,14 +23,6 @@ import Text.ParserCombinators.Parsec hiding (Parser, parse)
 import TypeLevel.List
 import TypeLevel.Naturals
 import Prelude hiding (break)
-
--- | Separate a list by dots
-class DotSep v where dotSep :: Show a => v a -> String
-
-instance Natural n => DotSep (List n) where
-    dotSep Nil = ""
-    dotSep (x:.Nil) = show x
-    dotSep (x:.xs) = show x ++ "." ++ dotSep xs
 
 
 -- | Given a time that is ordeded large unit to small unit (24:.60:.60:.Nil),
@@ -68,7 +60,6 @@ type Time n =
     , FromList (List n)
     , ParseTime (List n) Integer
     , ParseTime (List n) (Maybe Integer)
-    , DotSep (List n)
     , DottedList (List n) Integer
     , DottedList (List n) (Maybe Integer)
     , Natural n
@@ -98,10 +89,11 @@ instance ( TimeElem a
          , Natural n
          , DottedList (List n) a
          ) => ParseTime (List (Succ (Succ n))) a where
-    parseFull = (parse <* colin) `consA` (parse `consA` fullDots)
-    parsePartial = (parse <* colin) `consA` (parse `consA` someDots)
-    showTime (a:.b:.v) = display a ++ ":" ++ intercalate "." ds
-        where ds = map display $ b : relevantDots v
+    parseFull = (parse <* colin) `consA` ((parse <* colin) `consA` fullDots)
+    parsePartial = (parse <* colin) `consA` ((parse <* colin) `consA` someDots)
+    showTime (a:.b:.Nil) = display a ++ ":" ++ display b
+    showTime (a:.b:.v) = display a ++ ":" ++ display b ++ ":" ++
+        intercalate "." (map display $ relevantDots v)
     showTime _ = error "ParseTime used with unnatural list"
 
 
@@ -123,9 +115,9 @@ instance ( TimeElem a
          , DottedList (List n) a
          , Applicative (List n)
          ) => DottedList (List (Succ n)) a where
-    fullDots = (dot *> parse) `consA` fullDots
+    fullDots = parse `consA` (dot *> fullDots)
     someDots =
-        try ((dot *> parse) `consA` someDots)
+        try (parse `consA` (dot *> someDots))
         <|> pure (pure none)
     relevantDots v | all (== none) (dots v) = []
     relevantDots (a:.v) = a : relevantDots v

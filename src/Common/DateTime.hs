@@ -31,16 +31,12 @@ instance Time n => Ord (DateTime n) where (<=) = (<=) `on` dateTimeList
 
 -- | Displaying
 showInEra :: Time n => String -> DateTime n -> String
-showInEra e (DateTime y m d (t:.ts) x) = printf "%s %s/%s/%s%s" y e m d
-    (timeTail (printf "%s:%s" (show t) (dotSep ts)) x)
-showInEra e (DateTime y m d Nil x) = printf "%s %s/%s/%s%s" y e m d
-    (timeTail "" x)
-
-timeTail :: String -> Rational -> String
-timeTail "" 0 = ""
-timeTail t 0 = printf " %s" t
-timeTail "" x = printf " %s" $ showRatio x
-timeTail t x = printf " %s.%s" t $ showRatio x
+showInEra e (DateTime y m d t x) = printf "%s %s/%s/%s%s" y e m d
+    (timeTail (showTime t) (showRatio x)) where
+    timeTail "" "0" = ""
+    timeTail ts "0" = printf " %s" ts
+    timeTail "" str = printf " %s" str
+    timeTail ts str = printf " %s.%s" ts str
 
 
 

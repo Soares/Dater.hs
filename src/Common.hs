@@ -22,6 +22,7 @@ import Prelude hiding ((!!), reverse)
 import Range hiding (mod, start, end)
 import Utils ((!!), (%), around, leftover)
 type YMD = (Year, Month, Day)
+-- TODO: H:M:S.x, not H:M.S.x
 
 -- | Dates are measured as a Rational, measuring days since the 'beginning'
 -- | moment. Note that events may happen before the 'beginning' moment as
