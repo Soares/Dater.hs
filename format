@@ -1,0 +1,141 @@
+Things that our formatetr handles automatically:
+  flags:
+    -    no padding
+    _    pad with spaces
+    0    pad with zeros
+    ^    use upper case
+    #    use opposite case
+
+  auto non-date characters:
+    %    percent
+    n    newline
+    t    tab
+
+  formatter selection: (24hour/etc)
+    %1 - %999...
+
+  manipulation:
+    [] = common i.e. %[ymd], %[atrean]
+    {} = filter i.e. %{nd}d → 2nd, %{str}d → two, %{str|nd}d → second
+    () = args for filter i.e. "some%{s}(foo)(bar)d" → somefoo (if d is 1) or somebar (if d is plural)
+
+  directives:
+
+    a = Sun
+    A = Sunday
+    b = Jan
+    B = January
+    c = {complete} = %a %b %-d, %T %Y
+    C = century
+    d = day of month
+    D = {date} = %d/%m/%Y
+    e =
+    E =
+    f = fraction (detail)
+    F = {full year} = %Y-%m-%d
+    g = week year (2 digit)
+    G = week year (4 digit)
+    h =
+    H = hour
+    i =
+    I =
+    j = day of year
+    J =
+    k =
+    K =
+    l =
+    L =
+    m = month
+    M = minute
+    n -
+    N = nanoseconds
+    p = hour qualifer (am/pm)
+    P =
+    r = {long time} = %H:%M:%S.%N
+    R = {full time} = %H:%M:%S.%f
+    s =
+    S = seconds
+    t -
+    T = {time} = %H:%M:%S
+    u = day of week
+    U = week in year
+    v =
+    V = Week number in week year
+    w = day of week
+    W = week in year
+    x =
+    X = {short time} = %H:%M
+    y = year in century
+    Y = year
+    z = timezone (±hhmm)
+    Z = timezone abbreviation
+    : = special timezone mode (z → ±hh:mm, :z → ±hh:mm:ss, ::z → auto-precision)
+
+  To build a formatter, we need:
+    YMD -> Weekday
+    Weekday -> Short
+    Weekday -> Long
+    Month -> Short
+    Month -> Long
+    YMD -> (Week, Year)
+    Hour -> Maybe Qualifier (am/pm)
+    Nanosecond cap
+    HMSX -> Timezone abbreviation
+
+Axed:
+  s - seconds since epoch
+  e - %_d
+  h - %b
+  I - hour (01..12)
+  k - %_H
+  l - %_I
+  P - am/pm
+
+
+How unix "date" works:
+
+%% - %
+%a - Sun
+%A - Sunday
+%b - Jan
+%B - January
+%c - Sun Jan 1 23:59:59 1999
+%C - 19 (century)
+%d - 01 (day of month)
+%D - %m/%d/%y
+%e - %_d
+%F - %Y-%m-%d
+%g - last two digits of year of ISO week number (?)
+%G - year of ISO week number (?)
+%h - %b
+%H - hour (00..23)
+%I - hour (01..12)
+%j - day of year (001..366)
+%k - %_H
+%l - %_I
+%m - month (01..12)
+%M - minute (00..59)
+%n - newline
+%N - nanoseconds (integer, < billion)
+%p - AM/PM
+%P - am/pm
+%r - locale time (nonmilitary) 11:59:04 PM
+%R - 24:59
+%s - seconds since epoch
+%S - second (00..60)
+%t - tab
+%T - %H:%M:%s
+%u - Day of week (1..7) 1=Monday
+%U - week in year, Sunday first (00..53)
+%V - ISO week number, Monday first (01..53)
+%w - day of week (0..6) 0=Sunday
+%W - week in year, Monday first (00..53)
+%x - locale date 12/31/99
+%X - locale time (military) 23:59:04 PM
+%y - last two digits of year (0..99)
+%Y - Year
+%z - +hhmm numeric time zone (eg -0400)
+%:z - +hh:mm numeric time zone (eg -04:00)
+%::z - +hh:mm:ss numeric time zone
+%:::z - time zone to necessary precision eg -04, +05:30
+%Z - time zoen abbreviation (EDT)
