@@ -14,31 +14,38 @@ Things that our formatetr handles automatically:
   formatter selection: (24hour/etc)
     %1 - %999...
 
+  alternate selection: (Week-based year, etc)
+    %~1 - %~...
+
   manipulation:
     [] = common i.e. %[ymd], %[atrean]
     {} = filter i.e. %{nd}d → 2nd, %{str}d → two, %{str|nd}d → second
     () = args for filter i.e. "some%{s}(foo)(bar)d" → somefoo (if d is 1) or somebar (if d is plural)
 
   directives:
+    rules:
+      yY/m/d for date
+      H:M:S:N/F for date
+      ;/: for timezone
 
-    a = Sun
-    A = Sunday
+    a = Sun = %1~b
+    A = Sunday = %1~B
     b = Jan
     B = January
     c = {complete} = %a %b %-d, %T %Y
     C = century
     d = day of month
     D = {date} = %d/%m/%Y
-    e =
+    e = %_d
     E =
-    f = fraction (detail)
-    F = {full year} = %Y-%m-%d
+    f = {full year} = %Y-%m-%d
+    F = fraction (detail)
     g = week year (2 digit)
     G = week year (4 digit)
     h =
     H = hour
-    i =
-    I =
+    i = abbreviated hour name (not used in gregorian)
+    I = hour name (i.e. 12 hour)
     j = day of year
     J =
     k =
@@ -49,11 +56,11 @@ Things that our formatetr handles automatically:
     M = minute
     n -
     N = nanoseconds
-    p = hour qualifer (am/pm)
+    p = day qualifer (am/pm)
     P =
     r = {long time} = %H:%M:%S.%N
-    R = {full time} = %H:%M:%S.%f
-    s =
+    R = {full time} = %H:%M:%S.%F
+    s = seconds since zero
     S = seconds
     t -
     T = {time} = %H:%M:%S
@@ -67,13 +74,19 @@ Things that our formatetr handles automatically:
     X = {short time} = %H:%M
     y = year in century
     Y = year
-    z = timezone (±hhmm)
-    Z = timezone abbreviation
-    : = special timezone mode (z → ±hh:mm, :z → ±hh:mm:ss, ::z → auto-precision)
+    z = timezone abbreviation
+    Z = timezone full name
+    ; = timezone (±hhmm)
+    : = timezone ±hh:mm
+    :: = timezone ±hh:mm:ss
+    ::: = timezone auto-precision
 
   To build a formatter, we need:
-    YMD -> Weekday
-    Weekday -> Short
+    Integer -> (Year, Integer)
+    Year -> Integer -> Day
+    Year -> Integer -> Integer -> Time
+
+    Day -> Short
     Weekday -> Long
     Month -> Short
     Month -> Long
@@ -83,13 +96,11 @@ Things that our formatetr handles automatically:
     HMSX -> Timezone abbreviation
 
 Axed:
-  s - seconds since epoch
   e - %_d
   h - %b
-  I - hour (01..12)
   k - %_H
   l - %_I
-  P - am/pm
+  P - %^p
 
 
 How unix "date" works:
