@@ -10,7 +10,7 @@ import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
 
 data Zero = Zero
-data Succ a = Z { n :: Integer }
+data Succ a = Z { _n :: Integer }
 
 instance Show Zero where show = const "0"
 
@@ -25,15 +25,22 @@ class Pred n m | n -> m, m -> n
 instance Pred (Succ Zero) Zero
 instance Pred (Succ n) m => Pred (Succ (Succ n)) (Succ m)
 
+
+class Natural z => PosInt z where
+    n :: z -> Integer
+
+instance Natural z => PosInt (Succ z) where
+    n = _n
+
 instance Natural n => Enum (Succ n) where
     toEnum = Z . fromIntegral
     fromEnum = fromIntegral . n
 instance Natural n => Bounded (Succ n) where
     minBound = Z 0
     maxBound = Z $ 1 + natural (undefined :: n)
-instance Natural n => Eq (Succ n) where
+instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
-instance Natural n => Ord (Succ n) where
+instance Ord (Succ n) where
     (Z x) <= (Z y) = x <= y
 instance Natural n => Num (Succ n) where
     (Z x) + (Z y) = Z ((x + y) `mod` m) where Z m = (maxBound :: Succ n)
@@ -47,9 +54,8 @@ instance Natural n => Real (Succ n) where
 instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
-instance Natural n => Show (Succ n) where
+instance Show (Succ n) where
     show (Z x) = show x
-
 
 zMod :: Int -> TypeQ
 zMod 0 = [t|Zero|]
