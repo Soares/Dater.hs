@@ -9,39 +9,25 @@ module Enumable where
 import Data.List.Zipper
 import TypeLevel.Naturals hiding (n)
 
-class ContextList x a where
-    zipper :: x -> Zipper a
+class Enumable a where
+    zipper :: a -> Zipper a
 
--- instance ContextList Integer Integer where zipper _ = Zip [-1,-2..] [0..]
---
--- instance ContextList (Integer :/: Year) Month where
---  zipper _ = zZipper :: Zipper $(zMod 12)
---
--- instance ContextList (Integer :/: Year :/: Month) Day where
---  zipper (_ :/: y :/: m) | zZipper :: Zipper $(zMod x) where
---      x | y == Common && m == February = 28
---        | y == Leap && m == February = 29
---        | m `elem` [September, April, June, November] = 30
---        | otherwise = 31
+instance Enumable Integer where
+    zipper _ = Zip [-1,-2..] [0..]
 
-instance Natural n => ContextList (Succ n) (Succ n) where
-    zipper _ = zZipper
+instance Natural n => Enumable (Succ n) where
+    zipper _ = fromList $ init [minBound..maxBound]
 
 
 -- TODO: Make a zipper that has functor, applicative, monad
 concatZip :: (a -> Zipper b) -> Zipper a -> Zipper b
 concatZip fn (Zip ls rs) = Zip (concatMap (toList . fn) ls) (concatMap (toList . fn) rs)
 
-zZipper :: (Bounded n, Enum n, PosInt n) => Zipper n
-zZipper = fromList members
-
 zMap :: (a -> b) -> Zipper a -> Zipper b
 zMap fn (Zip ls rs) = Zip (map fn ls) (map fn rs)
+
 zConcat :: Zipper (Zipper a) -> Zipper a
 zConcat (Zip ls rs) = Zip (concatMap toList ls) (concatMap toList rs)
-
-members :: (Bounded e, Enum e) => [e]
-members = init [minBound..maxBound]
 
 travel :: (Integral n) => n -> (a -> a) -> a -> a
 travel 0 _ xs = xs
