@@ -20,7 +20,7 @@ class (Parse a, Format a, Enumable x) => DatePart a x y | a -> x, a -> y where
     break :: x -> (a, y)
     build :: a -> y -> x
     possibilities :: x -> Zipper (a, y)
-    possibilities = zMap break . zipper
+    possibilities = fmap break . zipper
 
 instance (Show a, Show b) => Show (a :/: b) where
     show (a :/: b) = show a ++ "/" ++ show b
@@ -37,7 +37,5 @@ instance (DatePart a x y, DatePart b y z) => DatePart (a :/: b) x z where
         (b, z) = break y
         in (a :/: b, z)
     build (a :/: b) z = build a (build b z)
-    possibilities = zConcat . zMap (uncurry comb) . bigs where
-        comb a = zMap (first (a :/:)) . littles
-        bigs = possibilities :: x -> Zipper (a, y)
-        littles = possibilities :: y -> Zipper (b, z)
+    possibilities x = uncurry combine =<< possibilities x where
+        combine a y = first (a :/:) <$> possibilities y
