@@ -59,7 +59,7 @@ instance Show (Succ n) where
 
 zMod :: Int -> TypeQ
 zMod 0 = [t|Zero|]
-zMod n = [t|Succ ($(zMod $ n-1))|]
+zMod x = [t|Succ ($(zMod $ x-1))|]
 
 
 type N0  = Zero
