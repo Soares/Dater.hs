@@ -8,6 +8,9 @@ module TypeLevel.Naturals where
 import Control.Arrow
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
+import FullEnum
+import Prelude hiding (Enum(..))
+import qualified Prelude
 
 data Zero = Zero
 data Succ a = Z { _n :: Integer }
@@ -32,9 +35,12 @@ class Natural z => PosInt z where
 instance Natural z => PosInt (Succ z) where
     n = _n
 
-instance Natural n => Enum (Succ n) where
+instance Natural n => Prelude.Enum (Succ n) where
     toEnum = Z . fromIntegral
     fromEnum = fromIntegral . n
+instance Natural n => Enum (Succ n) where
+    toEnum = Z
+    fromEnum = n
 instance Natural n => Bounded (Succ n) where
     minBound = Z 0
     maxBound = Z $ natural (undefined :: n)

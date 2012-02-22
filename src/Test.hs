@@ -4,33 +4,33 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE TemplateHaskell #-}
-import Enumable
-import Format
-import Parse
-import Prelude hiding (break)
-import TypeLevel.DatePart
-import TypeLevel.Naturals
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+module Test where
+import VarPart
+import Range
+import Zeroed
+import Prelude hiding (Enum(..))
+import FullEnum
+import qualified Prelude
 
-data Year = Year deriving Show
-instance Parse Year where parse = undefined
-instance Format Year where display = undefined
-data Month = Month deriving Show
-instance Parse Month where parse = undefined
-instance Format Month where display = undefined
-data Day = Day deriving Show
-instance Parse Day where parse = undefined
-instance Format Day where display = undefined
+newtype Year = Y Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Show, Zeroed)
+newtype Month = M Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Show, Zeroed)
+newtype Day = D Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Show, Zeroed)
 
-instance DatePart Year Integer (Year, Integer) where
-instance DatePart Month (Year, Integer) (Year, Month, Integer) where
-instance DatePart Day (Year, Month, Integer) () where
+isLeapYear :: Year -> Bool
+isLeapYear y
+    | y `mod` 400 == 0 = True
+    | y `mod` 100 == 0 = False
+    | y `mod` 4 == 0 = True
+    | otherwise = False
 
-instance Enumable (Year, Integer) where
-    zipper y = zMap (const y) (zipper (0 :: Integer))
-instance Enumable (Year, Month, Integer) where
-    zipper ymd = zMap (const ymd) (zipper (0 :: $(zMod 31)))
-
-v :: (Year :/: Month :/: Day)
-v = undefined
-mBreak :: DatePart (Year :/: Month :/: Day) Integer () => Integer -> (Year :/: Month :/: Day)
-mBreak x = let (a, ()) = break x in a
+instance Range Year Month where
+    range = const (1, 12)
+instance Range (Year:/:Month) Day where
+    start = const 1
+    end (y:/:2) = if isLeapYear y then 29 else 28
+    end (_:/:9) = 30
+    end (_:/:4) = 30
+    end (_:/:6) = 30
+    end (_:/:10) = 30
+    end _ = 31
