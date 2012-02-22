@@ -32,11 +32,11 @@ instance Enum Integer where
     fromEnum = id
     succ = (+1)
     pred = (+1)
-    enumFrom x = x : enumFrom (x+1)
+    enumFrom x = x : enumFrom (succ x)
     enumFromThen x y = e' x (y-x) where
         e' x d = x : e' (x+d) d
     enumFromTo x y
-        | abs x <= abs y = x : enumFromTo (x+1) y
+        | abs x <= abs y = x : enumFromTo (succ x) y
         | otherwise = []
     enumFromThenTo x1 x2 y = e' x1 (x2-x1) y where
         e' x d y

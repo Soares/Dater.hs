@@ -65,10 +65,20 @@ instance
         | b > start a = a :/: pred b
         | otherwise = pred a :/: end a
     enumFrom x = x : enumFrom (succ x)
+    enumFromTo x y
+        | x <= y = x : enumFromTo (succ x) y
+        | otherwise = []
+    -- TODO: We can't safely do enumFromThen* until we're at least a Num.
 
-instance Enum (a:/:b) => Prelude.Enum (a:/:b) where
+instance (Ord (a:/:b), Enum (a:/:b)) => Prelude.Enum (a:/:b) where
     fromEnum = fromIntegral . fromEnum
     toEnum = toEnum . toInteger
+    succ = succ
+    pred = pred
+    enumFrom x = x : enumFrom (succ x)
+    enumFromTo x y
+        | x <= y = x : enumFromTo (succ x) y
+        | otherwise = []
 
 elements :: Range x a => x -> [a]
 elements = enumFromTo <$> start <*> end

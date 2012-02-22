@@ -34,3 +34,7 @@ instance Range (Year:/:Month) Day where
     end (_:/:6) = 30
     end (_:/:10) = 30
     end _ = 31
+
+main = do
+    print $ toEnum (365*2012)
+    print $ toEnum (365*2013)
