@@ -5,7 +5,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Test where
 import VarPart
 import Range
 import Zeroed
@@ -36,5 +35,5 @@ instance Range (Year:/:Month) Day where
     end _ = 31
 
 main = do
-    print $ toEnum (365*2012)
-    print $ toEnum (365*2013)
+    print (toEnum (365*2012) :: (Year:/:Month:/:Day))
+    print (toEnum (365*2013) :: (Year:/:Month:/:Day))
