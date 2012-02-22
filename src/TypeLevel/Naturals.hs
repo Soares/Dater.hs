@@ -37,16 +37,16 @@ instance Natural n => Enum (Succ n) where
     fromEnum = fromIntegral . n
 instance Natural n => Bounded (Succ n) where
     minBound = Z 0
-    maxBound = Z $ 1 + natural (undefined :: n)
+    maxBound = Z $ natural (undefined :: n)
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
 instance Ord (Succ n) where
     (Z x) <= (Z y) = x <= y
 instance Natural n => Num (Succ n) where
-    (Z x) + (Z y) = Z ((x + y) `mod` m) where Z m = (maxBound :: Succ n)
-    (Z x) * (Z y) = Z ((x * y) `mod` m) where Z m = (maxBound :: Succ n)
-    (Z x) - (Z y) = Z ((x - y) `mod` m) where Z m = (maxBound :: Succ n)
-    fromInteger x = Z (x `mod` m) where Z m = (maxBound :: Succ n)
+    (Z x) + (Z y) = Z ((x + y) `mod` m) where m = natural (undefined :: Succ n)
+    (Z x) * (Z y) = Z ((x * y) `mod` m) where m = natural (undefined :: Succ n)
+    (Z x) - (Z y) = Z ((x - y) `mod` m) where m = natural (undefined :: Succ n)
+    fromInteger x = Z (x `mod` m) where m = natural (undefined :: Succ n)
     signum = const 1
     abs = id
 instance Natural n => Real (Succ n) where

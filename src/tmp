@@ -1,0 +1,265 @@
+data a :/: b = a :/: b
+
+class Zeroed a where zero :: a
+instance Zeroed Integer where zero = 0
+instance Zeroed Int where zero = 0
+
+class Enum a => Range x a | a -> x where
+	start :: x -> a
+	end :: x -> a
+
+instance (Bounded a, Range a b) => Bounded (a:/:b) where
+	minBound = minBound :/: start minBound
+	maxBound = maxBound :/: end maxBound
+
+instance (Range x a, Range a b) => Range x (a:/:b)
+	start x = start x :/: start (start x)
+	end x = end x :/: end (end x)
+
+instance (Enum a, Range a b) => Enum (a:/:b) where
+	toEnum i = possibilities i !! i
+	fromEnum (a:/:b) = indexOf (a:/:b) $ possibilities a
+
+elements :: Range x a => x -> [a]
+elements x = [start x .. end x]
+
+indexOf :: Eq a => a -> [a] -> Integer
+indexOf a (x:xs)
+	| a == x = 0
+	| otherwise = 1 + indexOf a xs
+indexOf _ [] = error "You said this stream was infinite!"
+
+possibilities :: (Num i, Zeroed a, Enum a, Range a b) => i -> [a:/:b]
+possibilities i = concatMap expand (including i) where
+	expand a = (a:/:) <$> elements a
+
+-- Note that zero is always included.
+including :: (Num b, Zeroed a, Enum a) => b -> [a]
+including b
+	| b >= 0 = [zero ..]
+	| otherwise = [zero, pred zero..]
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+instance (Range x a, Range a b) => Range x (a:/:b) where
+	start x = start x :/: start (start x)
+	end x = end x :/: end (end x)
+	
+instance (Enum a, Range a b) => Enum (a:/:b) where
+	toEnum i = range 0 index i
+	fromEnum (a:/:b) = index of b in range a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Ranged x a where
+	plus :: x -> [a] -> Either NotInRange (Integer, a)
+	minus :: x -> [a] -> Either NotInRange (Integer, a)
+
+instance (Integral a, Possibilities x a) => Ranged x a where
+	plus x a b = ...
+	minus x a b = ...
+
+instance (Ranged x a, Ranged (x:/:a) b) => Ranged x (a:/:b) where
+	plus x (a:/:b) (c:/:d) = case plus a [b, d] of
+		Right (da, b') -> plus x [a, da, c]
+		Left Overflow -> plus x ((a-1):/:0) (c:/:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SemiGroup a where
+	zero :: a
+	plus :: a -> a -> Maybe a
+	minus :: a -> a -> Maybe a
+	minus x y = plus x =<< negate y
+	invert :: a -> Maybe a
+	invert = (0 `minus`)
+
+class Group a where
+	(+) :: a -> a -> a
+	(-) :: a -> a -> a
+	x - y = x + (negate y)
+	negate :: a -> a
+	negate = (0 -)
+
+class SemiGroup a => SemiRing a where
+	one :: a
+	multiply :: a -> a -> Maybe a
+	fromInteger :: Integer -> Maybe a
+
+
+instance (SemiRing a, SemiRing b) => SemiGroup (a:/:b) where
+	zero = (zero:/:zero)
+	plus (a:/:b) (c:/:d) = case plus b d of
+		Nothing ->
+		| closed (+) b d = (a+c) :/: (c+d)
+		| 
+
+	-
+	*
+	abs
+	signum
+	fromInteger
+
+
+
+
+
+
+data a :/: b = a :/: b deriving (Eq, Ord, Show)
+
+class Encode i a | a -> i where
+	find :: i -> a
+	encode :: a -> i
+class Threadable a x y | a -> x, a -> y where
+	thread :: x -> (a, y)
+	build :: a -> y -> x
+class Possibilities x a | a -> x where possibilities :: x -> Zipper a
+class Signed a where
+	positive :: a -> Bool
+	negative :: a -> Bool
+	negative = not . positive
+
+newtype VarPart a = V a deriving (Signed, ...)
+instance (Signed a, Possibilities Integer a) => Encode Integer (VarPart a) where
+	find = V . go <*> possibilities
+	encode (V a) = norm $ index a xs where
+		xs = if positive z then afters z else befores z
+		norm y = if positive z then y else negate $ y + 1
+		z = possibilities 0
+
+newtype ConstPart a = C a
+instance Threadable a Integer () => Encode Integer (VarPart a) where
+	find = C . fst . thread
+	encode (C a) = build a ()
+	
+instance (Threadable a x a, Threadable b a ()) => Threadable (a:/:b) x () where
+	thread x = let
+		(a, a') = thread x
+		(b, ()) = thread a'
+		in (a:/:b, ())
+        build (a:/:b) () = build a (build b ())
+
+instance (Possibilities x a, Possibilities (x:/:a) b) => Possibilities x (a:/:b) where
+	possibilities x = possibilities x >>= combine where
+		combine a = (a:/:) <$> possibilities (x:/:a)
+
+instance Signed a => Signed (a:/:b) where
+	positive (a:/:_) = positive a
+
+instance (Alter a c, Alter b d) => Alter (a:/:b) (c:/:d) where
+	... (a:/:b) (c:/:d) = ... a c :/: ... b d 
+	clobber (a:/:b) (c:/:d) = clobber a c :/: clobber b d
+
+newtype Year = YYYY Integer
+	deriving (Integral, Enumable, ...)
+instance Possibilities Integer Year where
+	possibilities = const zipper
+
+newtype Month = MM $(zMod 12)
+	deriving (Integral, Enumable, ...)
+nstance Possibilities (Integer :/: Year) Month where
+	possibilities = const zipper
+instance Parse (Month :/: Day) where
+	parse = buildParser slash
+	parseMaybe = (:/:) <$> (parseMaybe <* slash) <*> parseMaybe
+instance Parse (Year :/: Month :/: Day) where
+	parse = buildParser "/"
+	parseMaybe =
+		try ((:/:) <$> (parseMaybe <* slash) <*> (parseMaybe <* slash) <*> ...???
+		((:/:) <$> (Just <$> parse) <*> pure Nothing <*> pure Nothing)))
+
+newtype Day = DD Int
+	deriving (Integral, ...)
+instance Possibilities (Integer :/: Year :/: Month) Day where
+	possibilities (_ :/: y :/: m) = ...
+
+newtype Hour = H $(zMod 24)
+	deriving (...)
+instance Threadable Hour Integer Integer
+
+newtype Minute = M $(zMod 60)
+	deriving (...)
+instance Threadable Minute Integer Integer
+
+newtype Second = S $(zMod 60)
+	deriving (...)
+instance Threadable Second Integer ()
+
+
+newtype Date = YYYYMMDD (V (Year :/: Month :/: Day))
+	deriving (Encode, ...)
+instance Format Date where
+	format f (YYYYMMDD ymd)
+		| weekday ...
+		| otherwise = format f ymd
+
+newtype Time = HMS (C (Hour :/: Minute :/: Second))
+	deriving (Format, Encode, ...)
+
+instance Calendar Date Time
+
+-- | Calendar
+type ( Format d, Parse d, Encode Integer d, Format t, Parse t, Encode Integer t) => Split d t
+class Split d t => DateTime d t where fromRational :: Rational -> (d, t)
+instance DateTime d t => Num (d, t)
+
+--| Parsing
+buildParser :: (Parse a, Parse b) => Parse String -> Parse (a :/: b)
+
+-- | Utilities
+-- distance :: Eq a => a -> [a] -> Integer
+-- distance a xs = if head xs == a then 0 else 1 + distance a (tail xs)
+
+-- | In Data.List.Zip
+afters, befores :: Zipper a -> [a]
+afters (Zip _ ys) = ys
+befores (Zip xs _) = xs
+
+-- | Orphans
+instance Signed Integer where positive = (>= 0) . signum
+instance Signed Int where positive = (>= 0) . signum
+

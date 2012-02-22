@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Format where
 import Control.Arrow
 
@@ -12,11 +13,11 @@ import Control.Arrow
 -- day   33   → 2      | Monday | [Mon, Mo, M]
 -- (Note: would it be day 33 or day 2?)
 
+class Format x a where
+    display :: Formatter -> x -> a -> String
+
 data Style = Number | Name | Abbreviation Int
 type Formatter = (Int, Style)
-
-class Format a where
-    display :: Formatter -> a -> String
 
 level :: Formatter -> Int
 level = fst

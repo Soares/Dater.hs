@@ -61,6 +61,10 @@ right z = z
 left (Zip (x:xs) ys) = Zip xs (x:ys)
 left z = z
 
+afters, befores :: Zipper a -> [a]
+afters (Zip _ ys) = ys
+befores (Zip xs _) = xs
+
 travel :: Integral i =>  (Zipper a -> Zipper a) -> i -> Zipper a -> Zipper a
 travel _ n _ | n < 0 = error "Infinite travel loop"
 travel _ 0 z = z
@@ -94,7 +98,7 @@ change _ z = z
 focus :: Zipper a -> a
 focus (Zip _ as) = head as
 
-length :: Zipper a -> Int
+length :: Zipper a -> Integer
 length = foldr (const (+1)) 0
 
 index :: Zipper a -> Int
