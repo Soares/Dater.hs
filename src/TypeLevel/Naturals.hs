@@ -3,17 +3,22 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 module TypeLevel.Naturals where
+import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
 import FullEnum
+import Parse
 import Prelude hiding (Enum(..))
 import qualified Prelude
+import Text.Printf
+import Text.ParserCombinators.Parsec (count, digit)
 
 data Zero = Zero
-data Succ a = Z { _n :: Integer }
+newtype Succ a = Z { _n :: Integer } deriving PrintfArg
 
 instance Show Zero where show = const "0"
 
@@ -60,8 +65,16 @@ instance Natural n => Real (Succ n) where
 instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
-instance Show (Succ n) where
-    show (Z x) = show x
+instance Natural n => Show (Succ n) where
+    show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
+
+instance Natural n => Parse (Succ n) where
+    parse = (Z . read) <$> count (digits (undefined::Succ n)) digit
+    -- TODO: read *at most* digits, not *exactly* digits
+    -- TODO: bounds checking
+
+digits :: Natural n => Succ n -> Int
+digits = length . show . natural
 
 zMod :: Int -> TypeQ
 zMod 0 = [t|Zero|]

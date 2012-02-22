@@ -6,15 +6,40 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 import VarPart
+import ConstPart
+import Date
 import Range
+import Parse
 import Zeroed
 import Prelude hiding (Enum(..))
 import FullEnum
+import TypeLevel.Naturals
 import qualified Prelude
+import Text.Printf (printf)
 
-newtype Year = Y Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Show, Zeroed)
-newtype Month = M Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Show, Zeroed)
-newtype Day = D Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Show, Zeroed)
+newtype Year = Y Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
+instance Zeroed Year where zero = Y 1
+instance Show Year where show (Y y) = show y
+
+newtype Month = M $(zMod 12) deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
+instance Show Month where show (M m) = show m
+
+newtype Day = D $(zMod 99) deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
+instance Show Day where show (D d) = show d
+
+newtype Hour = HH $(zMod 24) deriving (Eq, Num, Ord, Real, Integral, Enum, Prelude.Enum, Bounded, Parse)
+instance Show Hour where show (HH h) = show h
+
+newtype Minute = MM $(zMod 60) deriving (Eq, Num, Ord, Real, Integral, Enum, Prelude.Enum, Bounded, Parse)
+instance Show Minute where show (MM m) = show m
+
+newtype Second = SS $(zMod 60) deriving (Eq, Num, Ord, Real, Integral, Enum, Prelude.Enum, Bounded, Parse)
+instance Show Second where show (SS s) = show s
+
+type YMD = Year :/: Month :/: Day
+type HMS = Hour ::: Minute ::: Second
+
+type Gregorian = Date YMD HMS
 
 isLeapYear :: Year -> Bool
 isLeapYear y
@@ -28,11 +53,7 @@ instance Range Year Month where
 instance Range (Year:/:Month) Day where
     start = const 1
     end (y:/:2) = if isLeapYear y then 29 else 28
-    end (_:/:9) = 30
-    end (_:/:4) = 30
-    end (_:/:6) = 30
-    end (_:/:10) = 30
-    end _ = 31
+    end (_:/:m) = if m `elem` [9,4,6,10] then 30 else 31
 
 main = do
     print (toEnum (365*2012) :: (Year:/:Month:/:Day))

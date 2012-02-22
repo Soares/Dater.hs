@@ -5,10 +5,12 @@
 module ConstPart where
 import Control.Applicative
 import Format
+import FullEnum
 import Parse
-import Prelude hiding (break)
+import Prelude hiding (Enum(..), break)
 import TypeLevel.Naturals
 import TwoTuple
+import qualified Prelude
 
 data a ::: b = a ::: b deriving (Eq, Ord)
 
@@ -58,6 +60,16 @@ instance
     , Bounded a
     , Bounded b
     ) => Enum (a:::b) where
+
+    toEnum = break
+    fromEnum = build
+
+instance
+    ( Integral a
+    , Integral b
+    , Bounded a
+    , Bounded b
+    ) => Prelude.Enum (a:::b) where
 
     toEnum = break . toInteger
     fromEnum = fromIntegral . build

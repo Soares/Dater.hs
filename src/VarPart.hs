@@ -26,8 +26,8 @@ instance (Format x a, Format a b) => Format x (a:/:b) where
 instance (Parse a, Parse b) => Parse (a:/:b) where
     parse = (:/:) <$> (parse <* slash) <*> parse
 
-instance (Zeroed a, Zeroed b) => Zeroed (a:/:b) where
-    zero = zero :/: zero
+instance (Zeroed a, Range a b) => Zeroed (a:/:b) where
+    zero = zero :/: start zero
 
 instance TwoTuple (:/:) where
     toTuple (a:/:b) = (a,b)
@@ -56,8 +56,8 @@ instance
     , Zeroed a
     , Range a b
     ) => Enum (a:/:b) where
-    fromEnum (a:/:b) = indexOf (a:/:b) $ possibilities a
-    toEnum i = possibilities i !! i
+    fromEnum (a:/:b) = indexOf (a:/:b) $ possibilities a zero
+    toEnum i = possibilities i 0 !! i
     succ (a:/:b)
         | b < end a = a :/: succ b
         | otherwise = succ a :/: start a
@@ -96,16 +96,15 @@ indexOf _ [] = error "So it turns out that this stream isn't infinite."
 
 possibilities ::
     ( Ord i
-    , Zeroed i
     , Enum a
     , Zeroed a
     , Range a b
-    ) => i -> [a:/:b]
-possibilities i = concatMap expand (including i) where
+    ) => i -> i -> [a:/:b]
+possibilities i z = concatMap expand (including i z) where
     expand a = (a:/:) <$> elements a
 
 -- Note that zero is always included.
-including :: (Zeroed b, Ord b, Zeroed a, Enum a) => b -> [a]
-including b
-    | b >= zero = enumFrom zero
+including :: (Ord b, Zeroed a, Enum a) => b -> b -> [a]
+including b z
+    | b >= z = enumFrom zero
     | otherwise = enumFromThen zero (pred zero)
