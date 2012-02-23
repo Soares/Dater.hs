@@ -21,23 +21,14 @@ newtype Year = Y Integer deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, R
 instance Zeroed Year where zero = Y 1
 instance Show Year where show (Y y) = show y
 
-newtype Month = M $(zMod 12) deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
-instance Show Month where show (M m) = show m
+newtype Month = M Int deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
+instance Show Month where show (M m) = printf "%02d" m
 
-newtype Day = D $(zMod 99) deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
-instance Show Day where show (D d) = show d
-
-newtype Hour = HH $(zMod 24) deriving (Eq, Num, Ord, Real, Integral, Enum, Prelude.Enum, Bounded, Parse)
-instance Show Hour where show (HH h) = show h
-
-newtype Minute = MM $(zMod 60) deriving (Eq, Num, Ord, Real, Integral, Enum, Prelude.Enum, Bounded, Parse)
-instance Show Minute where show (MM m) = show m
-
-newtype Second = SS $(zMod 60) deriving (Eq, Num, Ord, Real, Integral, Enum, Prelude.Enum, Bounded, Parse)
-instance Show Second where show (SS s) = show s
+newtype Day = D Int deriving (Eq, Ord, Num, Integral, Enum, Prelude.Enum, Real, Parse)
+instance Show Day where show (D d) = printf "%02d" d
 
 type YMD = Year :/: Month :/: Day
-type HMS = Hour ::: Minute ::: Second
+type HMS = N24  ::: N60   ::: N60
 
 type Gregorian = Date YMD HMS
 

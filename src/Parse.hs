@@ -18,6 +18,7 @@ import Text.ParserCombinators.Parsec hiding (Parser, parse)
 
 type Parser = GenParser Char ()
 class Parse a where parse :: Parser a
+instance Parse Int where parse = read <$> many1 digit
 instance Parse Integer where parse = read <$> many1 digit
 instance Parse Rational where parse = (%) <$> (parse <* slash) <*> parse
 instance Parse a => Parse (Maybe a) where parse = optionMaybe parse

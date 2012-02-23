@@ -21,7 +21,7 @@ class Enum a where
     enumFromThenTo      :: a -> a -> a -> [a]
 
     succ                   = toEnum . (+) 1  . fromEnum
-    pred                   = toEnum . (-) 1 . fromEnum
+    pred                   = toEnum . (\x -> x - 1) . fromEnum
     enumFrom x             = map toEnum (enumFrom (fromEnum x))
     enumFromThen x y       = map toEnum (enumFromThen (fromEnum x) (fromEnum y))
     enumFromTo x y         = map toEnum (enumFromTo (fromEnum x) (fromEnum y))
@@ -31,7 +31,7 @@ instance Enum Integer where
     toEnum = id
     fromEnum = id
     succ = (+1)
-    pred = (+1)
+    pred x = x-1
     enumFrom x = x : enumFrom (succ x)
     enumFromThen x y = e' x (y-x) where
         e' x d = x : e' (x+d) d
