@@ -1,29 +1,27 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Format where
 import Control.Arrow
+import Data.Map (Map)
 
--- TODO: out of date
--- Formatters will be like
---  Left (0, Number)
---      Left = super day, Right = sub day
---      number = component it applies to
--- data Style = Number | Name   | Abbreviation Int
--- year  2012 → 2012   | 20     | [12]
--- month 3    → 3      | March  | [Mar]
--- day   33   → 2      | Monday | [Mon, Mo, M]
--- (Note: would it be day 33 or day 2?)
+data Style = Number | Name | Abbreviation Int deriving Show
+type Chunk = (Int, Style)
 
-class Format x a where
-    display :: Formatter -> x -> a -> String
-
-data Style = Number | Name | Abbreviation Int
-type Formatter = (Int, Style)
-
-level :: Formatter -> Int
+level :: Chunk -> Int
 level = fst
 
-style :: Formatter -> Style
+style :: Chunk -> Style
 style = snd
 
-descend :: Formatter -> Formatter
+descend :: Chunk -> Chunk
 descend = first $ (-) 1
+
+class Formatter f where
+    chunkMap :: f -> Map String Chunk
+    renderer :: f -> String -> [Either String Chunk]
+    format :: forall d. Format () d => f -> d -> String -> String
+    format f d = concatMap (either id $ display () d) . renderer f
+
+class Format x a where
+    display :: x -> a -> Chunk -> String

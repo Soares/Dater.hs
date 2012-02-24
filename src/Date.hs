@@ -28,4 +28,12 @@ instance (Parse d, Parse t, Enum t) => Parse (Date d t) where
     parse = fullDate <|> noExtra <|> datePart <?> "A DateTime"
 
 instance (Format () d, Format d t) => Format () (Date d t) where
-    display f () (Date d t x) = display f () d ++ display f d t ++ "" -- TODO: display the x here
+    display () (Date d t x) c = d' ++ t' ++ x' where
+        d' = display () d c
+        t' = display d t (descend c)
+        x' = "" -- TODO
+        -- x' should be something along the lines of
+        -- if isForExtra $ level c then case style c of
+        --      Number -> show x
+        --      Name -> numerator x
+        --      Abbreviation i -> show $ floor $ x * (10 ^ digits i)

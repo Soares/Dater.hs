@@ -19,7 +19,7 @@ instance (Show a, Show b) => Show (a:/:b) where
     show (a:/:b) = show a ++ "/" ++ show b
 
 instance (Format x a, Format a b) => Format x (a:/:b) where
-    display f x (a:/:b) = display f x a ++ display f a b
+    display x (a:/:b) c = display x a c ++ display a b (descend c)
 
 instance (Parse a, Parse b) => Parse (a:/:b) where
     parse = (:/:) <$> (parse <* slash) <*> parse
