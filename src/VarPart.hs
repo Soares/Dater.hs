@@ -13,8 +13,6 @@ import Range
 import TwoTuple
 import Zeroed
 
--- TODO: Zeroed/Ranged combination
-
 data a :/: b = a :/: b deriving (Eq, Ord)
 
 instance (Show a, Show b) => Show (a:/:b) where
