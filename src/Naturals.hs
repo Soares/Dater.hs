@@ -81,6 +81,15 @@ zMod 0 = [t|Zero|]
 zMod x = [t|Succ $(zMod $ x-1)|]
 
 
+-- Gross, yes, but until template haskell allows you to assign types to
+-- types we need a bunch of type synonyms.
+-- For instance, we can't say "type N60 = $(zMod 60)" at the moment,
+-- because GHC can't prove that there's not a type loop.
+-- Having these synonyms allows us to make times like this:
+--
+-- type HMS = N24 ::: N60 ::: N60
+--
+-- instead of needing three newtypes.
 type N0  = Zero
 type N1  = Succ N0
 type N2  = Succ N1
@@ -181,3 +190,4 @@ type N96 = Succ N95
 type N97 = Succ N96
 type N98 = Succ N97
 type N99 = Succ N98
+type N100 = Succ N99
