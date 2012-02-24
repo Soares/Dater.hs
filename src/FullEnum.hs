@@ -34,13 +34,13 @@ instance Enum Integer where
     pred x = x-1
     enumFrom x = x : enumFrom (succ x)
     enumFromThen x y = e' x (y-x) where
-        e' x d = x : e' (x+d) d
+        e' n d = n : e' (n+d) d
     enumFromTo x y
         | abs x <= abs y = x : enumFromTo (succ x) y
         | otherwise = []
-    enumFromThenTo x1 x2 y = e' x1 (x2-x1) y where
-        e' x d y
-            | abs x <= abs y = x : e' (x+d) d y
+    enumFromThenTo x1 x2 = e' x1 (x2-x1) where
+        e' n d y
+            | abs n <= abs y = n : e' (n+d) d y
             | otherwise = []
 instance Enum Int where
     toEnum = fromIntegral

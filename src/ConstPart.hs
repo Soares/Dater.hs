@@ -8,7 +8,6 @@ import Format
 import FullEnum
 import Parse
 import Prelude hiding (Enum(..), break)
-import TypeLevel.Naturals
 import TwoTuple
 import qualified Prelude
 

@@ -29,4 +29,3 @@ instance (Parse d, Parse t, Enum t) => Parse (Date d t) where
 
 instance (Format () d, Format d t) => Format () (Date d t) where
     display f () (Date d t x) = display f () d ++ display f d t ++ "" -- TODO: display the x here
-    

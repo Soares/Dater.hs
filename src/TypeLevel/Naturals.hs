@@ -78,7 +78,7 @@ digits = length . show . natural
 
 zMod :: Int -> TypeQ
 zMod 0 = [t|Zero|]
-zMod x = [t|Succ ($(zMod $ x-1))|]
+zMod x = [t|Succ $(zMod $ x-1)|]
 
 
 type N0  = Zero
