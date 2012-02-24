@@ -12,7 +12,7 @@ import Parse
 import Zeroed
 import Prelude hiding (Enum(..))
 import FullEnum
-import TypeLevel.Naturals
+import Naturals
 import qualified Prelude
 import Text.Printf (printf)
 

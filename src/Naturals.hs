@@ -5,7 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module TypeLevel.Naturals where
+module Naturals where
 import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
