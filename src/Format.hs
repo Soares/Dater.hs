@@ -17,6 +17,16 @@ style = snd
 descend :: Chunk -> Chunk
 descend = first $ (-) 1
 
+invert :: Chunk -> Chunk
+invert = first negate
+
+isAbove :: Chunk -> Bool
+isAbove = (>  0) . level
+isBelow :: Chunk -> Bool
+isBelow = (<  0) . level
+isForMe :: Chunk -> Bool
+isForMe = (== 0) . level
+
 class Formatter f where
     chunkMap :: f -> Map String Chunk
     renderer :: f -> String -> [Either String Chunk]
