@@ -34,6 +34,6 @@ instance (Format () d, Format d t) => Format () (Date d t) where
         x' = if isForMe c
                 then case style c of
                     Number -> show x
-                    Name -> numerator x
+                    Name -> show $ numerator x
                     Abbreviation i -> show $ floor $ x*10^i
                 else ""
