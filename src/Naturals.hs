@@ -8,6 +8,7 @@
 module Naturals where
 import Control.Applicative
 import Control.Arrow
+import Control.Monad (when)
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
 import Modable
@@ -79,7 +80,6 @@ instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
 instance Natural n => Parse (Succ n) where
     parse = (Z . read) <$> many1 digit
-
 
 digits :: Natural n => Succ n -> Int
 digits = length . show . natural
