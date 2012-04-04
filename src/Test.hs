@@ -32,9 +32,22 @@ instance Show Month where show (M m) = printf "%02d" m
 newtype Day = D Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
 instance Show Day where show (D d) = printf "%02d" d
 
+newtype Hour = H Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
+instance Show Hour where show (H h) = printf "%02d" h
+instance Bounded Hour where
+    minBound = 0
+    maxBound = 23
+
+newtype Part = P Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
+instance Show Part where show (P p) = printf "%02d" p
+instance Bounded Part where
+    minBound = 0
+    maxBound = 59
+
 type YMD = Year :/: Month :/: Day
-type YM = Year :/: Month
-type HMS = N24  ::: N60   ::: N60
+type HMS = Hour ::: Part  ::: Part
+
+type YM  = Year :/: Month
 
 type Gregorian = Date YMD HMS
 

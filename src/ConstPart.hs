@@ -8,6 +8,7 @@ import Format
 import Gen
 import Parse
 import TwoTuple
+import Normalize
 import Prelude hiding (break)
 
 data a ::: b = a ::: b deriving (Eq, Ord)
@@ -28,6 +29,25 @@ instance TwoTuple (:::) where
 instance (Bounded a, Bounded b) => Bounded (a:::b) where
     minBound = minBound ::: minBound
     maxBound = maxBound ::: maxBound
+
+instance
+    ( Integral a
+    , Bounded a
+    , Integral b
+    , Bounded b
+    ) => Normalize (a:::b) where
+    isOver (a:::_) = a > maxBound
+    isUnder (a:::_) = a < minBound
+    isNormal (a:::b) = inRange a && inRange b
+        where inRange x = x >= minBound && x <= maxBound
+    normalize (a:::b)
+        | isNormal (a:::b) = a:::b
+        | a > maxBound = normalize ((a - range) ::: b)
+        | a < minBound = normalize ((a + range) ::: b)
+        | b > maxBound = normalize (succ a ::: (b - range))
+        | otherwise = normalize (pred a ::: (b + range)) where
+            range :: forall a. (Bounded a, Integral a) => a
+            range = succ (maxBound - minBound)
 
 instance
     ( Integral a

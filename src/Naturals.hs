@@ -10,6 +10,7 @@ import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
+import Normalize
 import Parse
 import Text.Printf
 import Text.ParserCombinators.Parsec (count, digit)
