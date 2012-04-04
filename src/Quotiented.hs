@@ -3,35 +3,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Quotiented
-    ( VQR(..)
-    , VQRIn(..)
-    , varQuotRem
+    ( varQuotRem
     ) where
 import Control.Applicative
-import Zeroed
-import FullEnum
-import Sized
+import Gen
 import Range
-
-quotients :: Zeroed a => Integer -> [a]
-quotients i = if i >= 0 then positives else negatives
-
-positives :: Zeroed a => [a]
-positives = ps zero where ps a = a : ps (next a)
-
-negatives :: Zeroed a => [a]
-negatives = ns (prev zero) where ns a = a : ns (prev a)
-
-class (Sized a, Zeroed a) => VQR a where
-    vqr :: Integer -> (a, Integer)
-    vqr = varQuotRem size zero =<< quotients
-
-class (SizedIn a x, Ranged a x) => VQRIn a x where
-    vqrIn :: x -> Integer -> (a, Integer)
-    -- TODO: can we use all elements here?
-    -- What if we allow negative months?
-    -- What does that even mean?
-    vqrIn a = varQuotRem (sizeIn a) (start a) (elements a)
 
 varQuotRem :: (a -> Integer) -> a -> [a] -> Integer -> (a, Integer)
 varQuotRem s z as n = choose $ zip3 as (0:sizes) sizes where

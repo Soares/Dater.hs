@@ -8,12 +8,9 @@
 import VarPart
 import ConstPart
 import Date
-import FullEnum
+import Gen
 import Range
 import Parse
-import Sized
-import Zeroed
-import Quotiented
 import Naturals
 import Text.Printf (printf)
 
@@ -27,19 +24,12 @@ isLeapYear y
 newtype Year = Y Integer deriving (Eq, Ord, Num, Enum, Integral, Real, Parse, Gen)
 instance Zeroed Year where zero = Y 1
 instance Show Year where show (Y y) = show y
-instance Sized Year where size = sizeFrom (undefined :: Month)
-instance VQR Year
 
 newtype Month = M Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
 instance Show Month where show (M m) = printf "%02d" m
-instance SizedIn Month Year where
-    sizeIn y 2 = if isLeapYear y then 29 else 28
-    sizeIn y m = if m `elem` [9,4,6,11] then 30 else 31
-instance VQRIn Month Year
 
 newtype Day = D Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
 instance Show Day where show (D d) = printf "%02d" d
-instance SizedIn Day (Year:/:Month) where sizeIn _ = fromIntegral
 
 type YMD = Year :/: Month :/: Day
 type YM = Year :/: Month

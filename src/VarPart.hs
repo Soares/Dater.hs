@@ -8,12 +8,10 @@ import Control.Applicative
 import Control.Arrow
 import Format
 import Parse
-import FullEnum
+import Gen
 import Quotiented
 import Range
-import Sized
 import TwoTuple
-import Zeroed
 
 data a :/: b = a :/: b deriving (Eq, Ord)
 
@@ -33,11 +31,6 @@ instance TwoTuple (:/:) where
 instance (Zeroed a, Ranged b a, Ord b) => Zeroed (a:/:b) where
     zero = zero :/: start zero
 
-instance (Ord a, Ord b, Sized a, SizedIn b a, Ranged b a) => Sized (a:/:b) where
-    size (a:/:b) = sa + sb where
-        sa = sum $ map size $ predecessors a
-        sb = sum $ map (sizeIn a) $ filter (< b) (elements a)
-
 instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
     next (a:/:b)
         | b < end a = a :/: succ b
@@ -46,22 +39,33 @@ instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
         | b > start a = a :/: pred b
         | otherwise = prev a :/: end a
 
-instance (Ord a, VQR a, VQRIn b a, Integral b, Ranged b a, SizedIn b a) => VQR (a:/:b) where
-    vqr n = let
-        (a, i) = vqr n
-        (b, j) = vqrIn a i
-        in (a:/:b, j)
 
+size :: (Zeroed a, Integral b, Ranged b a) => a -> b -> Integer
+size a b = (intify a b) + (sum $ map count $ predecessors a)
 
-encode :: forall a b. (Sized a, Ranged b a, Integral b)
-    => (a:/:b) -> Integer
-encode (a:/:b) = size a + b' where
-    b' = fromIntegral b - fromIntegral (start a :: b)
+split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
+split n = choose $ zip3 as (0:sizes) sizes where
+    choose ((a, b, c):ds) = if enough c then (a, leftover b c) else choose ds
+    enough c = if n >= 0 then c > n else c >= (-n)
+    leftover b c = if n >= 0 then n-b else c+n
+    sizes = cascade $ map count as
+    as = nexts zero
 
+intify :: forall a b. (Ranged b a, Integral b) => a -> b -> Integer
+intify a b = fromIntegral b - fromIntegral (start a :: b)
 
-decode :: forall a b. (VQR a, Sized a, Ranged b a, Integral b)
-    => Integer -> (a:/:b)
+elemify :: forall a b. (Ranged b a, Integral b) => a -> Integer -> b
+elemify a i = fromIntegral (i + fromIntegral (start a :: b))
+
+encode :: (Zeroed a, Integral b, Ranged b a) => (a:/:b) -> Integer
+encode (a:/:b) = size a b
+
+decode :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a:/:b)
 decode n = let
-    (ym, i) = vqr n
-    d = fromIntegral (i + fromIntegral (start ym :: b))
-    in ym :/: d
+    (a, i) = split n
+    b = elemify a i
+    in a :/: b
+
+cascade :: Num a => [a] -> [a]
+cascade (x:xs) = x : map (+x) (cascade xs)
+cascade [] = []

@@ -5,13 +5,12 @@ module Sized
     , SizedIn(..)
     , sizeFrom
     ) where
-import Zeroed
 import Range
 
 class Zeroed a => Sized a where
     size :: a -> Integer
 
-class SizedIn a x where
+class Ranged a x => SizedIn a x where
     sizeIn :: x -> a -> Integer
 
 -- Helper function to 'auto-derive' size
