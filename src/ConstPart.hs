@@ -58,16 +58,6 @@ instance
     , Integral b
     , Bounded a
     , Bounded b
-    ) => Enum (a:::b) where
-
-    toEnum = break
-    fromEnum = build
-
-instance
-    ( Integral a
-    , Integral b
-    , Bounded a
-    , Bounded b
     ) => Prelude.Enum (a:::b) where
 
     toEnum = break . toInteger

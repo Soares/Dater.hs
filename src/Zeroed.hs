@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Zeroed where
+import FullEnum (Gen(..))
 -- Why not just use 'Num'? Well, a lot of dates don't start on
 -- '0'. For example, the gregorian calendar begins on Year 1.
 --
@@ -21,7 +22,20 @@ module Zeroed where
 -- users override "Show Year" to show one plus the year.
 -- I'm on the fence right now.
 
-class Zeroed a where zero :: a
+class Gen a => Zeroed a where zero :: a
 instance Zeroed Integer where zero = 0
-instance Zeroed Rational where zero = 0
 instance Zeroed Int where zero = 0
+
+predecessors :: (Eq a, Ord a, Zeroed a) => a -> [a]
+predecessors a
+    | a == zero = []
+    | a > zero = nextTo zero (prev a)
+    | otherwise = prevTo a zero
+nextTo :: (Eq a, Gen a) => a -> a -> [a]
+nextTo a b
+    | a == b = [a]
+    | otherwise = a : nextTo (next a) b
+prevTo :: (Eq a, Gen a) => a -> a -> [a]
+prevTo a b
+    | a == b = [a]
+    | otherwise = a : prevTo (prev a) b

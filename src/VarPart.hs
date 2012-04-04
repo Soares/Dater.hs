@@ -2,14 +2,16 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module VarPart where
 import Control.Applicative
+import Control.Arrow
 import Format
-import FullEnum
 import Parse
-import Prelude hiding (Enum(..), (!!))
-import qualified Prelude
+import FullEnum
+import Quotiented
 import Range
+import Sized
 import TwoTuple
 import Zeroed
 
@@ -24,85 +26,42 @@ instance (Format x a, Format a b) => Format x (a:/:b) where
 instance (Parse a, Parse b) => Parse (a:/:b) where
     parse = (:/:) <$> (parse <* slash) <*> parse
 
-instance (Zeroed a, Range a b) => Zeroed (a:/:b) where
-    zero = zero :/: start zero
-
 instance TwoTuple (:/:) where
     toTuple (a:/:b) = (a,b)
     fromTuple (a,b) = a:/:b
 
-instance (Bounded a, Range a b) => Bounded (a:/:b) where
-    minBound = minBound :/: start minBound
-    maxBound = maxBound :/: end maxBound
+instance (Zeroed a, Ranged b a, Ord b) => Zeroed (a:/:b) where
+    zero = zero :/: start zero
 
-instance
-    ( Eq b
-    , Ord a
-    , Ord b
-    , Zeroed a
-    , Range x a
-    , Range a b
-    ) => Range x (a:/:b) where
-    start x = start x :/: start (start x)
-    end x = end x :/: end (end x)
+instance (Ord a, Ord b, Sized a, SizedIn b a, Ranged b a) => Sized (a:/:b) where
+    size (a:/:b) = sa + sb where
+        sa = sum $ map size $ predecessors a
+        sb = sum $ map (sizeIn a) $ filter (< b) (elements a)
 
-instance
-    ( Eq b
-    , Ord a
-    , Ord b
-    , Enum a
-    , Zeroed a
-    , Range a b
-    ) => Enum (a:/:b) where
-    fromEnum (a:/:b) = indexOf (a:/:b) $ possibilities a zero
-    toEnum i = possibilities i 0 !! i
-    succ (a:/:b)
+instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
+    next (a:/:b)
         | b < end a = a :/: succ b
-        | otherwise = succ a :/: start a
-    pred (a:/:b)
+        | otherwise = next a :/: start a
+    prev (a:/:b)
         | b > start a = a :/: pred b
-        | otherwise = pred a :/: end a
-    enumFrom x = x : enumFrom (succ x)
-    enumFromTo x y
-        | x <= y = x : enumFromTo (succ x) y
-        | otherwise = []
-    -- TODO: We can't safely do enumFromThen* until we're at least a Num.
+        | otherwise = prev a :/: end a
 
-instance (Ord (a:/:b), Enum (a:/:b)) => Prelude.Enum (a:/:b) where
-    fromEnum = fromIntegral . fromEnum
-    toEnum = toEnum . toInteger
-    succ = succ
-    pred = pred
-    enumFrom x = x : enumFrom (succ x)
-    enumFromTo x y
-        | x <= y = x : enumFromTo (succ x) y
-        | otherwise = []
+instance (Ord a, VQR a, VQRIn b a, Integral b, Ranged b a, SizedIn b a) => VQR (a:/:b) where
+    vqr n = let
+        (a, i) = vqr n
+        (b, j) = vqrIn a i
+        in (a:/:b, j)
 
-elements :: Range x a => x -> [a]
-elements = enumFromTo <$> start <*> end
 
-(!!) :: [a] -> Integer -> a
-[] !! _ = error "Index too large."
-(x:_) !! 0 = x
-(_:xs) !! n = xs !! (n-1)
+encode :: forall a b. (Sized a, Ranged b a, Integral b)
+    => (a:/:b) -> Integer
+encode (a:/:b) = size a + b' where
+    b' = fromIntegral b - fromIntegral (start a :: b)
 
-indexOf :: Eq a => a -> [a] -> Integer
-indexOf a (x:xs)
-    | a == x = 0
-    | otherwise = 1 + indexOf a xs
-indexOf _ [] = error "So it turns out that this stream isn't infinite."
 
-possibilities ::
-    ( Ord i
-    , Enum a
-    , Zeroed a
-    , Range a b
-    ) => i -> i -> [a:/:b]
-possibilities i z = concatMap expand (including i z) where
-    expand a = (a:/:) <$> elements a
-
--- Note that zero is always included.
-including :: (Ord b, Zeroed a, Enum a) => b -> b -> [a]
-including b z
-    | b >= z = enumFrom zero
-    | otherwise = enumFromThen zero (pred zero)
+decode :: forall a b. (VQR a, Sized a, Ranged b a, Integral b)
+    => Integer -> (a:/:b)
+decode n = let
+    (ym, i) = vqr n
+    d = fromIntegral (i + fromIntegral (start ym :: b))
+    in ym :/: d
