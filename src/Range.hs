@@ -11,6 +11,7 @@ module Range
     , split
     , intify
     , elemify
+    , isInRange
     ) where
 import Control.Applicative
 import Control.Arrow
@@ -55,6 +56,9 @@ intify a b = fromIntegral b - fromIntegral (start a :: b)
 
 elemify :: forall a b. (Ranged b a, Integral b) => a -> Integer -> b
 elemify a i = fromIntegral (i + fromIntegral (start a :: b))
+
+isInRange :: (Ord b, Ranged b a) => a -> b -> Bool
+isInRange a b = b >= start a && b <= end a
 
 instance Zeroed Integer where zero = 0
 instance Zeroed Int where zero = 0
