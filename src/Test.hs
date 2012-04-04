@@ -12,6 +12,7 @@ import Gen
 import Range
 import Parse
 import Naturals
+import Normalize
 import Text.Printf (printf)
 
 isLeapYear :: Year -> Bool
@@ -21,7 +22,7 @@ isLeapYear y
     | y `mod` 4 == 0 = True
     | otherwise = False
 
-newtype Year = Y Integer deriving (Eq, Ord, Num, Enum, Integral, Real, Parse, Gen)
+newtype Year = Y Integer deriving (Eq, Ord, Num, Enum, Integral, Real, Parse, Gen, Normalize)
 instance Zeroed Year where zero = Y 1
 instance Show Year where show (Y y) = show y
 

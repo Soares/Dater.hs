@@ -4,6 +4,7 @@
 module VarPart where
 import Control.Applicative
 import Control.Arrow
+import Normalize
 import Format
 import Parse
 import Gen
@@ -35,6 +36,20 @@ instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
     prev (a:/:b)
         | b > start a = a :/: pred b
         | otherwise = prev a :/: end a
+
+instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
+    isNormal (a:/:b) = isNormal a && isInRange a b
+    normalize (a:/:b)
+        | not (isNormal a) = normalize (normalize a :/: b)
+        | isInRange a b = a :/: b
+        | b > end a = let
+            a' = next a
+            b' = fromInteger (toInteger b - count a)
+            in normalize (a' :/: b')
+        | otherwise = let
+            a' = prev a
+            b' = fromInteger (toInteger b + count a')
+            in normalize (a' :/: b')
 
 encode :: (Zeroed a, Integral b, Ranged b a) => (a:/:b) -> Integer
 encode (a:/:b) = size a b
