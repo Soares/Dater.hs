@@ -36,19 +36,14 @@ instance
     , Integral b
     , Bounded b
     ) => Normalize (a:::b) where
-    overflow (a:::_)
-        | a <= maxBound = 0
-        | otherwise = fromIntegral $ (a - minBound) `div` range
-    underflow (a:::_)
-        | a >= minBound = 0
-        | otherwise = fromIntegral $ abs (a - minBound) `div` range
     isNormal (a:::b) = isNormal a && b >= minBound && b <= maxBound
-    normalize (a:::b)
-        | isNormal (a:::b) = a:::b
-        | a > maxBound = normalize ((a - range) ::: b)
-        | a < minBound = normalize ((a + range) ::: b)
-        | b > maxBound = normalize (succ a ::: (b - range))
-        | otherwise = normalize (pred a ::: (b + range)) where
+    normalize (a:::b) = normalize' 0 a b where
+        normalize' o a b
+            | isNormal (a:::b) = (o, a:::b)
+            | b > maxBound     = normalize' o (succ a) (b - range)
+            | b < minBound     = normalize' o (pred a) (b + range)
+            | a > maxBound     = normalize' (succ o) (a - range) b
+            | otherwise        = normalize' (pred o) (a + range) b
 
 instance
     ( Integral a

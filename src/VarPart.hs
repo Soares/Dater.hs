@@ -39,16 +39,19 @@ instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
 instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
     isNormal (a:/:b) = isNormal a && isInRange a b
     normalize (a:/:b)
-        | not (isNormal a) = normalize (normalize a :/: b)
-        | isInRange a b = a :/: b
+        | not (isNormal a) = let
+            (o, a') = normalize a
+            (p, ab) = normalize $ a' :/: b
+            in (o+p, ab)
+        | isInRange a b = (0, a:/:b)
         | b > end a = let
             a' = next a
-            b' = fromInteger (toInteger b - count a)
-            in normalize (a' :/: b')
+            b' = fromInteger $ toInteger b - count a
+            in normalize $ a' :/: b'
         | otherwise = let
             a' = prev a
-            b' = fromInteger (toInteger b + count a')
-            in normalize (a' :/: b')
+            b' = fromInteger $ toInteger b + count a'
+            in normalize $ a' :/: b'
 
 encode :: (Zeroed a, Integral b, Ranged b a) => (a:/:b) -> Integer
 encode (a:/:b) = size a b
