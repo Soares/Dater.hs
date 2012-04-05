@@ -10,12 +10,10 @@ import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
-import FullEnum
+import Normalize
 import Parse
-import Prelude hiding (Enum(..))
-import qualified Prelude
 import Text.Printf
-import Text.ParserCombinators.Parsec (count, digit)
+import Text.ParserCombinators.Parsec (many1, digit)
 
 data Zero = Zero
 newtype Succ a = Z { _n :: Integer } deriving PrintfArg
@@ -40,26 +38,28 @@ class Natural z => PosInt z where
 instance Natural z => PosInt (Succ z) where
     n = _n
 
-instance Natural n => Prelude.Enum (Succ n) where
+instance Natural n => Enum (Succ n) where
     toEnum = Z . fromIntegral
     fromEnum = fromIntegral . n
-instance Natural n => Enum (Succ n) where
-    toEnum = Z
-    fromEnum = n
 instance Natural n => Bounded (Succ n) where
     minBound = Z 0
     maxBound = Z $ natural (undefined :: n)
+instance Natural n => Normalize (Succ n) where
+    isNormal z = z >= minBound && z <= maxBound
+    normalize = first fromIntegral . (`quotRem` m)
+        where m = Z $ natural (undefined :: Succ n)
+
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
 instance Ord (Succ n) where
     (Z x) <= (Z y) = x <= y
 instance Natural n => Num (Succ n) where
-    (Z x) + (Z y) = Z ((x + y) `mod` m) where m = natural (undefined :: Succ n)
-    (Z x) * (Z y) = Z ((x * y) `mod` m) where m = natural (undefined :: Succ n)
-    (Z x) - (Z y) = Z ((x - y) `mod` m) where m = natural (undefined :: Succ n)
-    fromInteger x = Z (x `mod` m) where m = natural (undefined :: Succ n)
-    signum = const 1
-    abs = id
+    (Z x) + (Z y) = Z (x + y)
+    (Z x) * (Z y) = Z (x * y)
+    (Z x) - (Z y) = Z (x - y)
+    fromInteger = Z
+    signum = Z . signum . n
+    abs = Z . abs . n
 instance Natural n => Real (Succ n) where
     toRational (Z x) = x % 1
 instance Natural n => Integral (Succ n) where
@@ -67,19 +67,12 @@ instance Natural n => Integral (Succ n) where
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
 instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
-
 instance Natural n => Parse (Succ n) where
-    parse = (Z . read) <$> count (digits (undefined::Succ n)) digit
-    -- TODO: read *at most* digits, not *exactly* digits
-    -- TODO: bounds checking
+    parse = (Z . read) <$> many1 digit
+
 
 digits :: Natural n => Succ n -> Int
 digits = length . show . natural
-
-zMod :: Int -> TypeQ
-zMod 0 = [t|Zero|]
-zMod x = [t|Succ $(zMod $ x-1)|]
-
 
 -- Gross, yes, but until template haskell allows you to assign types to
 -- types we need a bunch of type synonyms.
@@ -191,3 +184,163 @@ type N97 = Succ N96
 type N98 = Succ N97
 type N99 = Succ N98
 type N100 = Succ N99
+type N101 = Succ N100
+type N102 = Succ N101
+type N103 = Succ N102
+type N104 = Succ N103
+type N105 = Succ N104
+type N106 = Succ N105
+type N107 = Succ N106
+type N108 = Succ N107
+type N109 = Succ N108
+type N110 = Succ N109
+type N111 = Succ N110
+type N112 = Succ N111
+type N113 = Succ N112
+type N114 = Succ N113
+type N115 = Succ N114
+type N116 = Succ N115
+type N117 = Succ N116
+type N118 = Succ N117
+type N119 = Succ N118
+type N120 = Succ N119
+type N121 = Succ N120
+type N122 = Succ N121
+type N123 = Succ N122
+type N124 = Succ N123
+type N125 = Succ N124
+type N126 = Succ N125
+type N127 = Succ N126
+type N128 = Succ N127
+type N129 = Succ N128
+type N130 = Succ N129
+type N131 = Succ N130
+type N132 = Succ N131
+type N133 = Succ N132
+type N134 = Succ N133
+type N135 = Succ N134
+type N136 = Succ N135
+type N137 = Succ N136
+type N138 = Succ N137
+type N139 = Succ N138
+type N140 = Succ N139
+type N141 = Succ N140
+type N142 = Succ N141
+type N143 = Succ N142
+type N144 = Succ N143
+type N145 = Succ N144
+type N146 = Succ N145
+type N147 = Succ N146
+type N148 = Succ N147
+type N149 = Succ N148
+type N150 = Succ N149
+type N151 = Succ N150
+type N152 = Succ N151
+type N153 = Succ N152
+type N154 = Succ N153
+type N155 = Succ N154
+type N156 = Succ N155
+type N157 = Succ N156
+type N158 = Succ N157
+type N159 = Succ N158
+type N160 = Succ N159
+type N161 = Succ N160
+type N162 = Succ N161
+type N163 = Succ N162
+type N164 = Succ N163
+type N165 = Succ N164
+type N166 = Succ N165
+type N167 = Succ N166
+type N168 = Succ N167
+type N169 = Succ N168
+type N170 = Succ N169
+type N171 = Succ N170
+type N172 = Succ N171
+type N173 = Succ N172
+type N174 = Succ N173
+type N175 = Succ N174
+type N176 = Succ N175
+type N177 = Succ N176
+type N178 = Succ N177
+type N179 = Succ N178
+type N180 = Succ N179
+type N181 = Succ N180
+type N182 = Succ N181
+type N183 = Succ N182
+type N184 = Succ N183
+type N185 = Succ N184
+type N186 = Succ N185
+type N187 = Succ N186
+type N188 = Succ N187
+type N189 = Succ N188
+type N190 = Succ N189
+type N191 = Succ N190
+type N192 = Succ N191
+type N193 = Succ N192
+type N194 = Succ N193
+type N195 = Succ N194
+type N196 = Succ N195
+type N197 = Succ N196
+type N198 = Succ N197
+type N199 = Succ N198
+type N200 = Succ N199
+type N201 = Succ N200
+type N202 = Succ N201
+type N203 = Succ N202
+type N204 = Succ N203
+type N205 = Succ N204
+type N206 = Succ N205
+type N207 = Succ N206
+type N208 = Succ N207
+type N209 = Succ N208
+type N210 = Succ N209
+type N211 = Succ N210
+type N212 = Succ N211
+type N213 = Succ N212
+type N214 = Succ N213
+type N215 = Succ N214
+type N216 = Succ N215
+type N217 = Succ N216
+type N218 = Succ N217
+type N219 = Succ N218
+type N220 = Succ N219
+type N221 = Succ N220
+type N222 = Succ N221
+type N223 = Succ N222
+type N224 = Succ N223
+type N225 = Succ N224
+type N226 = Succ N225
+type N227 = Succ N226
+type N228 = Succ N227
+type N229 = Succ N228
+type N230 = Succ N229
+type N231 = Succ N230
+type N232 = Succ N231
+type N233 = Succ N232
+type N234 = Succ N233
+type N235 = Succ N234
+type N236 = Succ N235
+type N237 = Succ N236
+type N238 = Succ N237
+type N239 = Succ N238
+type N240 = Succ N239
+type N241 = Succ N240
+type N242 = Succ N241
+type N243 = Succ N242
+type N244 = Succ N243
+type N245 = Succ N244
+type N246 = Succ N245
+type N247 = Succ N246
+type N248 = Succ N247
+type N249 = Succ N248
+type N250 = Succ N249
+type N251 = Succ N250
+type N252 = Succ N251
+type N253 = Succ N252
+type N254 = Succ N253
+type N255 = Succ N254
+type N256 = Succ N255
+
+zMod :: Int -> TypeQ
+zMod 0 = [t|Zero|]
+zMod x = [t|Succ $(zMod $ x-1)|]
