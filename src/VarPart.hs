@@ -37,8 +37,6 @@ instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
         | otherwise = prev a :/: end a
 
 instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
-    isOver = const False
-    isUnder = const False
     isNormal (a:/:b) = isNormal a && isInRange a b
     normalize (a:/:b)
         | not (isNormal a) = normalize (normalize a :/: b)

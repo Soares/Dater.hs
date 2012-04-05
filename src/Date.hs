@@ -19,8 +19,10 @@ instance (Show d, Show t) => Show (Date d t) where
 
 fullDate :: (Parse d, Parse t) => Parser (Date d t)
 fullDate = Date <$> (parse <* whitespace) <*> parse <*> (dot *> parse)
+
 noExtra :: (Parse d, Parse t) => Parser (Date d t)
 noExtra = Date <$> (parse <* whitespace) <*> parse <*> pure 0
+
 datePart :: (Parse d, Parse t, Enum t) => Parser (Date d t)
 datePart = Date <$> parse <*> pure (toEnum 0) <*> pure 0
 

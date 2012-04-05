@@ -30,27 +30,25 @@ instance (Bounded a, Bounded b) => Bounded (a:::b) where
     maxBound = maxBound ::: maxBound
 
 instance
-    ( Ord a
-    , Num a
-    , Enum a
+    ( Integral a
     , Bounded a
-    , Ord b
-    , Num b
-    , Enum b
+    , Normalize a
+    , Integral b
     , Bounded b
     ) => Normalize (a:::b) where
-    isOver (a:::_) = a > maxBound
-    isUnder (a:::_) = a < minBound
-    isNormal (a:::b) = inRange a && inRange b
-        where inRange x = x >= minBound && x <= maxBound
+    overflow (a:::_)
+        | a <= maxBound = 0
+        | otherwise = fromIntegral $ (a - minBound) `div` range
+    underflow (a:::_)
+        | a >= minBound = 0
+        | otherwise = fromIntegral $ abs (a - minBound) `div` range
+    isNormal (a:::b) = isNormal a && b >= minBound && b <= maxBound
     normalize (a:::b)
         | isNormal (a:::b) = a:::b
         | a > maxBound = normalize ((a - range) ::: b)
         | a < minBound = normalize ((a + range) ::: b)
         | b > maxBound = normalize (succ a ::: (b - range))
         | otherwise = normalize (pred a ::: (b + range)) where
-            range :: forall t. (Bounded t, Num t, Enum t) => t
-            range = succ (maxBound - minBound)
 
 instance
     ( Integral a
@@ -128,3 +126,6 @@ apply ::
     , TwoTuple t
     ) => (Integer -> Integer -> Integer) -> t x y -> t x y -> t x y
 apply f x y = break $ f (build x) (build y)
+
+range :: forall t. (Bounded t, Num t, Enum t) => t
+range = succ (maxBound - minBound)
