@@ -3,9 +3,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 module ConstPart ((:::)(..)) where
+import Coded
 import Control.Arrow
 import Normalize
-import Coded
 import Pair
 
 -- | A simple combinator, inteded for combining types into a time type.

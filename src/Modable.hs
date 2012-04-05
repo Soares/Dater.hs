@@ -31,18 +31,16 @@ thread f g ab = maybe ab (merge $ tmap f g ab)
 
 
 -- | Instances that are modable on Maybe objects
+-- | There's a little type system hackery going on here,
+-- | so be careful how you make new instances.
+
 instance (Modable a x, Modable b y, Pair p)
     => Modable (p a b) (Maybe (p x y)) where
     plus = thread plus plus
     minus = thread minus minus
     clobber = thread clobber clobber
 
-instance Modable Integer (Maybe Integer) where
-    plus a = maybe a (a+)
-    minus a = maybe a (a-)
-    clobber a = maybe a id
-
-instance Modable Int (Maybe Int) where
+instance Num a => Modable a (Maybe a) where
     plus a = maybe a (a+)
     minus a = maybe a (a-)
     clobber a = maybe a id

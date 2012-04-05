@@ -1,19 +1,20 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Naturals where
 import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
+import Modable
 import Normalize
 import Parse
-import Text.Printf
 import Text.ParserCombinators.Parsec (many1, digit)
+import Text.Printf
 
 data Zero = Zero
 newtype Succ a = Z { _n :: Integer } deriving PrintfArg
@@ -65,6 +66,10 @@ instance Natural n => Real (Succ n) where
 instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
+instance Natural n => Modable (Succ n) (Maybe (Succ n)) where
+    plus a = maybe a (a+)
+    minus a = maybe a (a-)
+    clobber a = maybe a id
 instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
 instance Natural n => Parse (Succ n) where

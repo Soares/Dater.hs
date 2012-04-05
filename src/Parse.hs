@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Parse
     ( Parser
     , Parse(parse)

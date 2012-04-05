@@ -5,18 +5,23 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-import VarPart
+import Coded
 import ConstPart
 import Date
 import Gen
-import Ranged
-import Parse
-import Zeroed
-import Normalize
 import Naturals
-import Coded
+import Normalize
+import Parse
+import Ranged
 import Text.Printf (printf)
+import VarPart
+import Zeroed
 
+newtype Year = Y Integer deriving
+    ( Eq, Ord, Num, Real, Enum, Integral
+    , Parse, Gen, Normalize)
+instance Zeroed Year where zero = Y 1
+instance Show Year where show (Y y) = show y
 isLeapYear :: Year -> Bool
 isLeapYear y
     | y `mod` 400 == 0 = True
@@ -24,17 +29,13 @@ isLeapYear y
     | y `mod` 4 == 0 = True
     | otherwise = False
 
-newtype Year = Y Integer deriving (Eq, Ord, Num, Real, Enum, Integral, Parse, Gen, Normalize)
-instance Zeroed Year where zero = Y 1
-instance Show Year where show (Y y) = show y
-
-newtype Month = M Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
+newtype Month = M Int deriving ( Eq, Ord, Num, Real, Enum, Integral, Parse)
 instance Show Month where show (M m) = printf "%02d" m
 instance Ranged Month Year where
     start = const 1
     end = const 12
 
-newtype Day = D Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
+newtype Day = D Int deriving ( Eq, Ord, Num, Real, Enum, Integral, Parse)
 instance Show Day where show (D d) = printf "%02d" d
 instance Ranged Day (Year:/:Month) where
     start = const 1

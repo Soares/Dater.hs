@@ -1,10 +1,10 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Date where
 import Control.Applicative hiding ((<|>))
 import Data.Ratio
-import Parse
 import Format
+import Parse
 import Text.ParserCombinators.Parsec hiding (Parser, parse)
 
 data Date d t = Date
