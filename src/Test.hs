@@ -11,7 +11,6 @@ import Date
 import Gen
 import Range
 import Parse
-import Naturals
 import Normalize
 import Text.Printf (printf)
 
@@ -22,45 +21,40 @@ isLeapYear y
     | y `mod` 4 == 0 = True
     | otherwise = False
 
-newtype Year = Y Integer deriving (Eq, Ord, Num, Enum, Integral, Real, Parse, Gen, Normalize)
+newtype Year = Y Integer deriving (Eq, Ord, Num, Real, Enum, Integral, Parse, Gen, Normalize)
 instance Zeroed Year where zero = Y 1
 instance Show Year where show (Y y) = show y
 
-newtype Month = M Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
+newtype Month = M Int deriving (Eq, Ord, Num, Enum, Parse)
 instance Show Month where show (M m) = printf "%02d" m
-
-newtype Day = D Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
-instance Show Day where show (D d) = printf "%02d" d
-
-newtype Hour = H Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
-instance Show Hour where show (H h) = printf "%02d" h
-instance Bounded Hour where
-    minBound = 0
-    maxBound = 23
-
-newtype Part = P Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
-instance Show Part where show (P p) = printf "%02d" p
-instance Bounded Part where
-    minBound = 0
-    maxBound = 59
-
-type YMD = Year :/: Month :/: Day
-type HMS = Hour ::: Part  ::: Part
-
-type YM  = Year :/: Month
-
-type Gregorian = Date YMD HMS
-
 instance Ranged Month Year where
     start = const 1
     end = const 12
+
+newtype Day = D Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
+instance Show Day where show (D d) = printf "%02d" d
 instance Ranged Day (Year:/:Month) where
     start = const 1
     end (y:/:2) = if isLeapYear y then 29 else 28
     end (_:/:m) = if m `elem` [9,4,6,10] then 30 else 31
 
+newtype Hour = H Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
+instance Show Hour where show (H h) = printf "%02d" h
+instance Bounded Hour where
+    minBound = 0
+    maxBound = 23
+
+newtype Sixtieth = S Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
+instance Show Sixtieth where show (S p) = printf "%02d" p
+instance Bounded Sixtieth where
+    minBound = 0
+    maxBound = 59
+
+type YMD = Year :/: Month    :/: Day
+type HMS = Hour ::: Sixtieth ::: Sixtieth
+type Gregorian = Date YMD HMS
+
 main :: IO ()
 main = do
-    -- print (toEnum (365*2012) :: (Year:/:Month:/:Day))
-    -- print (toEnum (365*2013) :: (Year:/:Month:/:Day))
-    return ()
+    print (decode (365*2012) :: (Year:/:Month:/:Day))
+    print (decode (365*2013) :: (Year:/:Month:/:Day))

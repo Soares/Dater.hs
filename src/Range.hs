@@ -46,6 +46,7 @@ size a b = intify a b + sum (map count $ predecessors a)
 split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
 split n = choose 0 elems where
     elems = if n >= 0 then nexts zero else prevs (prev zero)
+    choose _ [] = error "Reached the end of an infinite list"
     choose t (a:as) = let u = t + count a
         in if enough u then (a, leftover t u) else choose u as
     enough c = if n >= 0 then c > n else c >= (-n)

@@ -5,13 +5,16 @@
 module ConstPart where
 import Control.Applicative
 import Format
-import Gen
 import Parse
 import TwoTuple
 import Normalize
 import Prelude hiding (break)
 
 data a ::: b = a ::: b deriving (Eq, Ord)
+
+instance TwoTuple (:::) where
+    toTuple (a:::b) = (a,b)
+    fromTuple (a,b) = a:::b
 
 instance (Show a, Show b) => Show (a:::b) where
     show (a:::b) = show a ++ ":" ++ show b
@@ -22,18 +25,18 @@ instance (Format x a, Format a b) => Format x (a:::b) where
 instance (Parse a, Parse b) => Parse (a:::b) where
     parse = (:::) <$> (parse <* colin) <*> parse
 
-instance TwoTuple (:::) where
-    toTuple (a:::b) = (a,b)
-    fromTuple (a,b) = a:::b
-
 instance (Bounded a, Bounded b) => Bounded (a:::b) where
     minBound = minBound ::: minBound
     maxBound = maxBound ::: maxBound
 
 instance
-    ( Integral a
+    ( Ord a
+    , Num a
+    , Enum a
     , Bounded a
-    , Integral b
+    , Ord b
+    , Num b
+    , Enum b
     , Bounded b
     ) => Normalize (a:::b) where
     isOver (a:::_) = a > maxBound
@@ -46,7 +49,7 @@ instance
         | a < minBound = normalize ((a + range) ::: b)
         | b > maxBound = normalize (succ a ::: (b - range))
         | otherwise = normalize (pred a ::: (b + range)) where
-            range :: forall a. (Bounded a, Integral a) => a
+            range :: forall t. (Bounded t, Num t, Enum t) => t
             range = succ (maxBound - minBound)
 
 instance
@@ -55,7 +58,6 @@ instance
     , Bounded a
     , Bounded b
     ) => Num (a:::b) where
-
     (+) = apply (+)
     (-) = apply (-)
     (*) = apply (*)
@@ -69,7 +71,6 @@ instance
     , Bounded a
     , Bounded b
     ) => Real (a:::b) where
-
     toRational (a:::b) = toRational $ build (a,b)
 
 instance
@@ -78,7 +79,6 @@ instance
     , Bounded a
     , Bounded b
     ) => Enum (a:::b) where
-
     toEnum = break . toInteger
     fromEnum = fromIntegral . build
 
@@ -88,7 +88,6 @@ instance
     , Bounded a
     , Bounded b
     ) => Integral (a:::b) where
-
     toInteger = build
     quotRem ab xy = let
         d = build xy
@@ -103,9 +102,9 @@ build :: forall t x y.
     , TwoTuple t
     ) => t x y -> Integer
 build t = (x * sizey) + y where
-    x = fromIntegral $ left t
-    y = fromIntegral $ right t
-    sizey = 1 + fromIntegral (maxBound - minBound :: y)
+    x = toInteger $ left t
+    y = toInteger $ right t
+    sizey = 1 + toInteger (maxBound - minBound :: y)
 
 break :: forall t x y.
     ( Integral x

@@ -1,4 +1,12 @@
-module TwoTuple where
+module TwoTuple
+    ( TwoTuple(..)
+    , left
+    , right
+    , tmap
+    , summarize
+    , merge
+    , both
+    ) where
 
 class TwoTuple t where
     toTuple :: t a b -> (a, b)
@@ -15,7 +23,7 @@ right :: TwoTuple t => t a b -> b
 right = snd . toTuple
 
 tmap :: TwoTuple t => (a -> x) -> (b -> y) -> t a b -> t x y
-tmap fa fb ab = fromTuple (fa $ left ab, fb $ right ab)
+tmap f g ab = fromTuple (f $ left ab, g $ right ab)
 
 summarize :: TwoTuple t => (a -> b -> x) -> t a b -> x
 summarize f ab = f (left ab) (right ab)

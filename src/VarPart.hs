@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module VarPart where
 import Control.Applicative
-import Control.Arrow
 import Normalize
 import Format
 import Parse
