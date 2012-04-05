@@ -8,6 +8,7 @@ import Format
 import Parse
 import Gen
 import Range
+import Zeroed
 import TwoTuple
 
 data a :/: b = a :/: b deriving (Eq, Ord)

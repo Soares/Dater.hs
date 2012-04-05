@@ -11,6 +11,7 @@ import Date
 import Gen
 import Range
 import Parse
+import Zeroed
 import Normalize
 import Text.Printf (printf)
 
@@ -25,13 +26,13 @@ newtype Year = Y Integer deriving (Eq, Ord, Num, Real, Enum, Integral, Parse, Ge
 instance Zeroed Year where zero = Y 1
 instance Show Year where show (Y y) = show y
 
-newtype Month = M Int deriving (Eq, Ord, Num, Enum, Parse)
+newtype Month = M Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
 instance Show Month where show (M m) = printf "%02d" m
 instance Ranged Month Year where
     start = const 1
     end = const 12
 
-newtype Day = D Int deriving (Eq, Ord, Num, Integral, Enum, Real, Parse)
+newtype Day = D Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
 instance Show Day where show (D d) = printf "%02d" d
 instance Ranged Day (Year:/:Month) where
     start = const 1
@@ -40,9 +41,14 @@ instance Ranged Day (Year:/:Month) where
 
 newtype Hour = H Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
 instance Show Hour where show (H h) = printf "%02d" h
+-- TODO: Make this easier
 instance Bounded Hour where
     minBound = 0
     maxBound = 23
+instance Normalize Hour where
+    isNormal h = h >= minBound && h <= maxBound
+    normalize h = (fromIntegral o, minBound + r) where
+        (o, r) = ((h - minBound) `quotRem` ConstPart.range)
 
 newtype Sixtieth = S Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
 instance Show Sixtieth where show (S p) = printf "%02d" p
