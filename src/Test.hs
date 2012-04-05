@@ -13,6 +13,7 @@ import Range
 import Parse
 import Zeroed
 import Normalize
+import Naturals
 import Text.Printf (printf)
 
 isLeapYear :: Year -> Bool
@@ -39,28 +40,12 @@ instance Ranged Day (Year:/:Month) where
     end (y:/:2) = if isLeapYear y then 29 else 28
     end (_:/:m) = if m `elem` [9,4,6,10] then 30 else 31
 
-newtype Hour = H Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
-instance Show Hour where show (H h) = printf "%02d" h
--- TODO: Make this easier
-instance Bounded Hour where
-    minBound = 0
-    maxBound = 23
-instance Normalize Hour where
-    isNormal h = h >= minBound && h <= maxBound
-    normalize h = (fromIntegral o, minBound + r) where
-        (o, r) = ((h - minBound) `quotRem` ConstPart.range)
-
-newtype Sixtieth = S Int deriving (Eq, Ord, Num, Real, Enum, Integral, Parse)
-instance Show Sixtieth where show (S p) = printf "%02d" p
-instance Bounded Sixtieth where
-    minBound = 0
-    maxBound = 59
-
-type YMD = Year :/: Month    :/: Day
-type HMS = Hour ::: Sixtieth ::: Sixtieth
+type YMD = Year :/: Month :/: Day
+type HMS = N24  ::: N60   ::: N60
 type Gregorian = Date YMD HMS
 
 main :: IO ()
 main = do
-    print (decode (365*2012) :: (Year:/:Month:/:Day))
-    print (decode (365*2013) :: (Year:/:Month:/:Day))
+    print $ normal (decode (365*2012) :: (Year:/:Month:/:Day))
+    print $ normal (decode (365*2013) :: (Year:/:Month:/:Day))
+    print $ normal (toEnum (23*60*60) :: (N24:::N60:::N60))
