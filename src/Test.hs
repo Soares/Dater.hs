@@ -9,11 +9,12 @@ import VarPart
 import ConstPart
 import Date
 import Gen
-import Range
+import Ranged
 import Parse
 import Zeroed
 import Normalize
 import Naturals
+import Coded
 import Text.Printf (printf)
 
 isLeapYear :: Year -> Bool
@@ -46,6 +47,7 @@ type Gregorian = Date YMD HMS
 
 main :: IO ()
 main = do
-    print $ normal (decode (365*2012) :: (Year:/:Month:/:Day))
-    print $ normal (decode (365*2013) :: (Year:/:Month:/:Day))
-    print $ normal (toEnum (23*60*60) :: (N24:::N60:::N60))
+    print $ normal ((decode $ encode (decode (365*2012)::YMD))::YMD)
+    print $ normal ((decode $ encode (decode (365*2013)::YMD))::YMD)
+    print $ normal ((decode $ encode (decode (23*60*60)::HMS))::HMS)
+    print $ normal ((decode $ encode (decode (12*60*60+(17*60)+59)::HMS))::HMS)

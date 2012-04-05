@@ -1,34 +1,34 @@
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-module VarPart where
-import Control.Applicative
-import Normalize
-import Format
-import Parse
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeOperators #-}
+module VarPart ((:/:)(..)) where
 import Gen
-import Range
+import Normalize
+import Ranged
+import Coded
+import Pair
 import Zeroed
-import TwoTuple
 
+-- | A simple combinator, intended for combining types into a date type
 data a :/: b = a :/: b deriving (Eq, Ord)
 
-instance (Show a, Show b) => Show (a:/:b) where
-    show (a:/:b) = show a ++ "/" ++ show b
-
-instance (Format x a, Format a b) => Format x (a:/:b) where
-    display x (a:/:b) c = display x a c ++ display a b (descend c)
-
-instance (Parse a, Parse b) => Parse (a:/:b) where
-    parse = (:/:) <$> (parse <* slash) <*> parse
-
-instance TwoTuple (:/:) where
+-- | Some utilities to treat :/: like a tuple
+instance Pair (:/:) where
     toTuple (a:/:b) = (a,b)
     fromTuple (a,b) = a:/:b
 
+-- | The slash is utalized by default when showing date values.
+-- | Use a newtype and override for different semantics.
+-- | Note that you can easily change the formatting with a formatter
+-- | without resorting to newtypes.
+instance (Show a, Show b) => Show (a:/:b) where
+    show (a:/:b) = show a ++ "/" ++ show b
+
+-- | Defines the starting point for a date
 instance (Zeroed a, Ranged b a, Ord b) => Zeroed (a:/:b) where
     zero = zero :/: start zero
 
+-- | Allows us to generate prior and succeeding dates
 instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
     next (a:/:b)
         | b < end a = a :/: succ b
@@ -37,6 +37,9 @@ instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
         | b > start a = a :/: pred b
         | otherwise = prev a :/: end a
 
+-- | Normalizes the date such that all parts are within their respective
+-- | ranges. By convention, dates shouldn't overflow: they should just get
+-- | bigger and smaller.
 instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
     isNormal (a:/:b) = isNormal a && isInRange a b
     normalize (a:/:b)
@@ -54,11 +57,29 @@ instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
             b' = fromInteger $ toInteger b + count a'
             in normalize $ a' :/: b'
 
-encode :: (Zeroed a, Integral b, Ranged b a) => (a:/:b) -> Integer
-encode (a:/:b) = size a b
+-- | Allows us to encode and decode the date
+instance (Zeroed a, Integral b, Ranged b a) => Coded (a:/:b) where
+    encode (a:/:b) = size a b
+    decode = fromTuple . (id **^ elemify) . split
+        where (**^) f g (a, b) = (f a, g a b)
 
-decode :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a:/:b)
-decode n = let
-    (a, i) = split n
-    b = elemify a i
-    in a :/: b
+-- | The size of an element and it's preceeding contexts.
+-- | For example, the size of (Year 2, Month 4) is 14 in the Gregorian
+-- | calendar, because April of Year 2 is the 14th (zero-indexed) month
+-- | of the calendar. (Year 1, Month 1 is size 0.)
+-- | (Year 0, Month 12) is size -1, by contrast.
+size :: (Zeroed a, Integral b, Ranged b a) => a -> b -> Integer
+size a b = intify a b + sum (map count $ predecessors a)
+
+-- | Essentially, this function is version of `quotRem` where the
+-- | quotients keep changing. It splits an integer into a quotient
+-- | and a remainder, where the quotient is (for instance) of type
+-- | (Year:/:Month) and the remainder is used to construct the Day.
+split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
+split n = choose 0 elems where
+    elems = if n >= 0 then nexts zero else prevs (prev zero)
+    choose _ [] = error "Reached the end of an infinite list"
+    choose t (a:as) = let u = t + count a
+        in if enough u then (a, leftover t u) else choose u as
+    enough c = if n >= 0 then c > n else c >= (-n)
+    leftover b c = if n >= 0 then n-b else n+c

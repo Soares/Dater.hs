@@ -1,7 +1,4 @@
-module Zeroed
-    ( Zeroed(zero)
-    , predecessors
-    ) where
+module Zeroed (Zeroed(zero) , predecessors) where
 import Gen
 
 -- | Elements that have a default (zero) position.
@@ -24,6 +21,5 @@ predecessors a
 
 
 -- | Simple instances
-
 instance Zeroed Integer where zero = 0
 instance Zeroed Int where zero = 0
