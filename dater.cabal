@@ -1,5 +1,5 @@
 Name:          dater
-Version:       0.1.0
+Version:       0.1.1
 License:       MIT
 License-file:  LICENSE
 Category:      Writing
@@ -21,7 +21,6 @@ Test-Suite test-dater
     parsec >= 3.1 && < 4,
     containers >= 0.4,
     template-haskell >= 2 && < 3,
-    random >= 1.0,
     base >= 4 && < 5
   Hs-Source-Dirs: src
 
