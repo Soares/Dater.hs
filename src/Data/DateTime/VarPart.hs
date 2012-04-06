@@ -89,7 +89,7 @@ instance (Zeroed a, Integral b, Ranged b a) => Coded (a:/:b) where
 -- | Allows QuickCheck testing
 instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where
     arbitrary = (:/:) <$> arbitrary <*> arbitrary
-    shrink (a:/:b) = [ (x:/:b) | x <- shrink a ] ++ [ (a:/:y) | y <- shrink b ]
+    shrink (a:/:b) = [ x:/:b | x <- shrink a ] ++ [ a:/:y | y <- shrink b ]
 
 -- | The size of an element and it's preceeding contexts.
 -- | For example, the size of (Year 2, Month 4) is 14 in the Gregorian

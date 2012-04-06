@@ -19,8 +19,6 @@ import Text.Parse
 import Text.Printf (printf)
 
 
--- TODO: hlint
-
 newtype Year = Y Integer deriving
     (Eq, Ord, Num, Real, Enum, Integral, Parse, Normalize, Arbitrary)
 instance Zeroed Year where zero = Y 1

@@ -29,7 +29,7 @@ instance
     isNormal (DateTime d t _) = isNormal d && isNormal t
     normalize (DateTime d t e) = (p, DateTime d' t' e') where
         excess = truncate e :: Integer
-        e' = e - (fromIntegral excess)
+        e' = e - fromIntegral excess
         (o, t') = normalize (add excess t)
         (p, d') = normalize (add o d)
         add 0 a = a
