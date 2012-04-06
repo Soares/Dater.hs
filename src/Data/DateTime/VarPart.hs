@@ -97,7 +97,8 @@ instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where
 -- | of the calendar. (Year 1, Month 1 is size 0.)
 -- | (Year 0, Month 12) is size -1, by contrast.
 size :: (Zeroed a, Integral b, Ranged b a) => a -> b -> Integer
-size a b = intify a b + sum (map count $ predecessors a)
+size a b = intify a b + ((if a >= zero then 1 else -1) * sizea) where
+    sizea = sum $ map count $ predecessors a
 
 -- | Essentially, this function is version of `quotRem` where the
 -- | quotients keep changing. It splits an integer into a quotient
