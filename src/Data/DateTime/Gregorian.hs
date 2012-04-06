@@ -7,7 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Data.DateTime.Gregorian where
 import Data.DateTime.ConstPart
-import Data.DateTime.Date
+import Data.DateTime.DateTime
 import Data.DateTime.VarPart
 import Data.Naturals
 import Data.Normalize
@@ -47,4 +47,4 @@ instance Ranged Day (Year:/:Month) where
 
 type YMD = Year :/: Month :/: Day
 type HMS = N24  ::: N60   ::: N60
-type Gregorian = Date YMD HMS
+type Gregorian = DateTime YMD HMS

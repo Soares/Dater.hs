@@ -34,7 +34,7 @@ Library
   Exposed-Modules:
     Data.Coded,
     Data.DateTime.ConstPart,
-    Data.DateTime.Date,
+    Data.DateTime.DateTime,
     Data.DateTime.Gregorian,
     Data.DateTime.VarPart,
     Data.Modable,
