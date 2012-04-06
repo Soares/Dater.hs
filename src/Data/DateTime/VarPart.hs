@@ -1,13 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
-module VarPart ((:/:)(..)) where
-import Gen
-import Normalize
-import Ranged
-import Coded
-import Pair
-import Zeroed
+module Data.DateTime.VarPart ((:/:)(..)) where
+import Data.Coded
+import Data.Normalize
+import Data.Pair
+import Data.Ranged
+import Data.Zeroed
 
 -- | A simple combinator, intended for combining types into a date type
 data a :/: b = a :/: b deriving (Eq, Ord)
@@ -25,22 +24,24 @@ instance (Show a, Show b) => Show (a:/:b) where
     show (a:/:b) = show a ++ "/" ++ show b
 
 -- | Defines the starting point for a date
-instance (Zeroed a, Ranged b a, Ord b) => Zeroed (a:/:b) where
+instance (Zeroed a, Ranged b a, Integral b) => Zeroed (a:/:b) where
     zero = zero :/: start zero
 
 -- | Allows us to generate prior and succeeding dates
-instance (Gen a, Ord b, Ranged b a) => Gen (a:/:b) where
-    next (a:/:b)
+instance (Zeroed a, Enum a, Ord b, Ranged b a, Integral b) => Enum (a:/:b) where
+    succ (a:/:b)
         | b < end a = a :/: succ b
-        | otherwise = next a :/: start a
-    prev (a:/:b)
+        | otherwise = succ a :/: start a
+    pred (a:/:b)
         | b > start a = a :/: pred b
-        | otherwise = prev a :/: end a
+        | otherwise = pred a :/: end a
+    toEnum = decode . fromIntegral
+    fromEnum = fromIntegral . encode
 
 -- | Normalizes the date such that all parts are within their respective
 -- | ranges. By convention, dates shouldn't overflow: they should just get
 -- | bigger and smaller.
-instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
+instance (Enum a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
     isNormal (a:/:b) = isNormal a && isInRange a b
     normalize (a:/:b)
         | not (isNormal a) = let
@@ -49,11 +50,11 @@ instance (Gen a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
             in (o+p, ab)
         | isInRange a b = (0, a:/:b)
         | b > end a = let
-            a' = next a
+            a' = succ a
             b' = fromInteger $ toInteger b - count a
             in normalize $ a' :/: b'
         | otherwise = let
-            a' = prev a
+            a' = pred a
             b' = fromInteger $ toInteger b + count a'
             in normalize $ a' :/: b'
 
@@ -77,7 +78,7 @@ size a b = intify a b + sum (map count $ predecessors a)
 -- | (Year:/:Month) and the remainder is used to construct the Day.
 split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
 split n = choose 0 elems where
-    elems = if n >= 0 then nexts zero else prevs (prev zero)
+    elems = if n >= 0 then nexts zero else prevs (pred zero)
     choose _ [] = error "Reached the end of an infinite list"
     choose t (a:as) = let u = t + count a
         in if enough u then (a, leftover t u) else choose u as

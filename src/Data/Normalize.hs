@@ -1,4 +1,4 @@
-module Normalize (Normalize(..)) where
+module Data.Normalize (Normalize(..)) where
 import Control.Arrow
 
 -- | This class is for values that can be entered (and persisted) in

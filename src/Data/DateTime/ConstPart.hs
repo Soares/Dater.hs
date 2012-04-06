@@ -2,11 +2,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
-module ConstPart ((:::)(..)) where
+module Data.DateTime.ConstPart ((:::)(..)) where
 import Control.Arrow
-import Normalize
-import Coded
-import Pair
+import Data.Coded
+import Data.Normalize
+import Data.Pair
 
 -- | A simple combinator, inteded for combining types into a time type.
 data a ::: b = a ::: b deriving (Eq, Ord)

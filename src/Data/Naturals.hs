@@ -1,19 +1,20 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Naturals where
+{-# LANGUAGE UndecidableInstances #-}
+module Data.Naturals where
 import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
+import Data.Modable
+import Data.Normalize
 import Language.Haskell.TH hiding (Pred)
-import Normalize
-import Parse
-import Text.Printf
+import Text.Parse
 import Text.ParserCombinators.Parsec (many1, digit)
+import Text.Printf
 
 data Zero = Zero
 newtype Succ a = Z { _n :: Integer } deriving PrintfArg
@@ -22,8 +23,10 @@ instance Show Zero where show = const "0"
 
 class Natural n
     where natural :: n -> Integer
+
 instance Natural Zero
     where natural = const 0
+
 instance Natural n => Natural (Succ n)
     where natural = const $ 1 + natural (undefined :: n)
 
@@ -51,8 +54,10 @@ instance Natural n => Normalize (Succ n) where
 
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
+
 instance Ord (Succ n) where
     (Z x) <= (Z y) = x <= y
+
 instance Natural n => Num (Succ n) where
     (Z x) + (Z y) = Z (x + y)
     (Z x) * (Z y) = Z (x * y)
@@ -62,14 +67,18 @@ instance Natural n => Num (Succ n) where
     abs = Z . abs . n
 instance Natural n => Real (Succ n) where
     toRational (Z x) = x % 1
+
 instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
+instance Natural n => Modable (Succ n) (Maybe (Succ n)) where
+    plus a = maybe a (a+)
+    minus a = maybe a (a-)
+    clobber a = maybe a id
 instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
 instance Natural n => Parse (Succ n) where
     parse = (Z . read) <$> many1 digit
-
 
 digits :: Natural n => Succ n -> Int
 digits = length . show . natural
