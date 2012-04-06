@@ -5,16 +5,16 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Gregorian where
-import ConstPart
-import Date
-import Naturals
-import Normalize
-import Parse
-import Ranged
+module Data.DateTime.Gregorian where
+import Data.DateTime.ConstPart
+import Data.DateTime.Date
+import Data.DateTime.VarPart
+import Data.Naturals
+import Data.Normalize
+import Data.Ranged
+import Data.Zeroed
+import Text.Parse
 import Text.Printf (printf)
-import VarPart
-import Zeroed
 
 newtype Year = Y Integer deriving
     ( Eq, Ord, Num, Real, Enum, Integral, Parse, Normalize)

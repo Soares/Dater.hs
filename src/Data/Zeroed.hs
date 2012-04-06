@@ -1,4 +1,11 @@
-module Zeroed where -- TODO: (Zeroed(zero) , predecessors) where
+module Data.Zeroed
+    ( Zeroed(zero)
+    , predecessors
+    , nexts
+    , nextTo
+    , prevs
+    , prevTo
+    ) where
 
 -- | Elements that have a default (zero) position.
 -- | (Note than zero need not be analagous to 0. Gregorian years begin on

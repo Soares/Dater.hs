@@ -1,4 +1,4 @@
-module Coded (Coded(..)) where
+module Data.Coded (Coded(..)) where
 
 -- | Things that can be encoded and decoded
 class Coded a where

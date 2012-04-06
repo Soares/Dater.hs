@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Modable where
-import Pair
+module Data.Modable where
+import Data.Pair
 
 -- | A class that allows simple 'arithmetic' betwene
 -- | different types. In simplet types, 'b' is 'Maybe a'

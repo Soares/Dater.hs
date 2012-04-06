@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Ranged
+module Data.Ranged
     ( Ranged(range, start, end)
     , elements
     , count

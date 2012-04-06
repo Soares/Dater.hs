@@ -32,15 +32,16 @@ Library
   Ghc-Options:   -O2 -Wall
   Hs-Source-Dirs:  src
   Exposed-Modules:
-    Coded,
-    ConstPart,
-    Date,
-    Format,
-    Gregorian,
-    Modable,
-    Naturals,
-    Normalize,
-    Pair,
-    Ranged,
-    VarPart,
-    Zeroed
+    Data.Coded,
+    Data.DateTime.ConstPart,
+    Data.DateTime.Date,
+    Data.DateTime.Gregorian,
+    Data.DateTime.VarPart,
+    Data.Modable,
+    Data.Naturals,
+    Data.Normalize,
+    Data.Pair,
+    Data.Ranged,
+    Data.Zeroed,
+    Text.Format,
+    Text.Parse

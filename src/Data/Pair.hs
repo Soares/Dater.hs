@@ -1,4 +1,4 @@
-module Pair
+module Data.Pair
     ( Pair(..)
     , left
     , right

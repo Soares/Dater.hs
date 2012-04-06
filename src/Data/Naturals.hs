@@ -5,14 +5,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Naturals where
+module Data.Naturals where
 import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
+import Data.Modable
+import Data.Normalize
 import Language.Haskell.TH hiding (Pred)
-import Modable
-import Normalize
-import Parse
+import Text.Parse
 import Text.ParserCombinators.Parsec (many1, digit)
 import Text.Printf
 

@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
-module VarPart ((:/:)(..)) where
-import Normalize
-import Ranged
-import Coded
-import Pair
-import Zeroed
+module Data.DateTime.VarPart ((:/:)(..)) where
+import Data.Coded
+import Data.Normalize
+import Data.Pair
+import Data.Ranged
+import Data.Zeroed
 
 -- | A simple combinator, intended for combining types into a date type
 data a :/: b = a :/: b deriving (Eq, Ord)
