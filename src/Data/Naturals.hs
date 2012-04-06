@@ -12,12 +12,16 @@ import Data.Ratio ((%))
 import Data.Modable
 import Data.Normalize
 import Language.Haskell.TH hiding (Pred)
+import Test.QuickCheck
 import Text.Parse
 import Text.ParserCombinators.Parsec (many1, digit)
 import Text.Printf
 
+-- TODO: Fix spacing
+
 data Zero = Zero
-newtype Succ a = Z { _n :: Integer } deriving PrintfArg
+-- TODO: rename 'n'
+newtype Succ a = Z { _n :: Integer } deriving (PrintfArg, Arbitrary)
 
 instance Show Zero where show = const "0"
 

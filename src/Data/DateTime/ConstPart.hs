@@ -2,6 +2,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Data.DateTime.ConstPart ((:::)(..)) where
 import Control.Arrow
 import Data.Coded
@@ -9,7 +11,29 @@ import Data.Normalize
 import Data.Pair
 
 -- | A simple combinator, inteded for combining types into a time type.
-data a ::: b = a ::: b deriving (Eq, Ord)
+data a ::: b = a ::: b
+
+type Normal a b =
+    ( Bounded a
+    , Bounded b
+    , Integral a
+    , Integral b
+    , Normalize a
+    )
+
+-- | Equality is checked post-normalization
+instance Normal a b => Eq (a:::b) where
+    x == y = let
+        (a:::b) = normal x
+        (c:::d) = normal y
+        in a == c && b == d
+
+-- | Ordering is determined post-normalization
+instance Normal a b => Ord (a:::b) where
+    x <= y = let
+        (a:::b) = normal x
+        (c:::d) = normal y
+        in if a == c then b <= d else a < c
 
 -- | Some utilities to allow us to treat ::: like a tuple
 instance Pair (:::) where
@@ -30,13 +54,7 @@ instance (Bounded a, Bounded b) => Bounded (a:::b) where
 
 -- | Normalizes the time, such that all parts are within their respective
 -- | boundaries. Normalization is NOT indempotent, as there may be overflow.
-instance
-    ( Integral a
-    , Bounded a
-    , Normalize a
-    , Integral b
-    , Bounded b
-    ) => Normalize (a:::b) where
+instance Normal a b => Normalize (a:::b) where
     isNormal (a:::b) = isNormal a && b >= minBound && b <= maxBound
     normalize (a:::b)
         | isNormal (a:::b) = (0, a:::b)
@@ -55,17 +73,17 @@ instance (Integral a, Integral b, Bounded b) => Num (a:::b) where
     fromInteger = decode
 
 -- | Really just necessary so that we can get Integral support
-instance (Integral a, Integral b, Bounded b) => Real (a:::b) where
+instance Normal a b => Real (a:::b) where
     toRational = toRational . encode
 
 -- | Really just necessary so that we can get Integral support
-instance (Integral a, Integral b, Bounded b) => Enum (a:::b) where
+instance Normal a b => Enum (a:::b) where
     toEnum = decode . toInteger
     fromEnum = fromIntegral . encode
 
 -- | Really we just want the toInteger function.
 -- | The quotRem implementation is quite contrived.
-instance (Integral a, Integral b, Bounded b) => Integral (a:::b) where
+instance Normal a b => Integral (a:::b) where
     toInteger = encode
     quotRem ab xy = let
         n = encode ab

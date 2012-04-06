@@ -12,14 +12,15 @@ Cabal-Version: >=1.9.2
 
 Test-Suite test-dater
   type: exitcode-stdio-1.0
-  main-is: Test/Dater.hs
+  main-is: Test/Main.hs
   build-depends:
     Cabal >= 1.9.2,
-    HUnit >= 1.2,
     QuickCheck >= 2.4,
     test-framework >= 0.6,
     test-framework-quickcheck2 >= 0.2,
-    test-framework-hunit >= 0.2.7,
+    parsec >= 3.1 && < 4,
+    containers >= 0.4,
+    template-haskell >= 2 && < 3,
     base >= 4 && < 5
   Hs-Source-Dirs: src
 
@@ -28,6 +29,8 @@ Library
     parsec >= 3.1 && < 4,
     containers >= 0.4,
     template-haskell >= 2 && < 3,
+    QuickCheck >= 2.4,
+    random >= 1.0,
     base >= 4 && < 5
   Ghc-Options:   -O2 -Wall
   Hs-Source-Dirs:  src
