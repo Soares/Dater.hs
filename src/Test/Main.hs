@@ -2,8 +2,9 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
-import Test.Data.Enum
 import Test.Data.Coded
+import Test.Data.Enum
+import Test.Data.Zeroed
 
 import Data.DateTime.Gregorian
 import Data.Naturals
@@ -26,4 +27,5 @@ tests =
         , testEnum (undefined::HMS)
         , testCoded (undefined::HMS)
         ]
+    , testZeroed
     ]
