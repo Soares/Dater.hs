@@ -9,9 +9,9 @@ module Pair
     ) where
 
 -- | Things that can act like a two-tuple
-class Pair t where
-    toTuple :: t a b -> (a, b)
-    fromTuple :: (a, b) -> t a b
+class Pair p where
+    toTuple :: p a b -> (a, b)
+    fromTuple :: (a, b) -> p a b
 
 -- | The simple tuple instance
 instance Pair (,) where
@@ -19,28 +19,28 @@ instance Pair (,) where
     fromTuple = id
 
 -- | Pair's version of 'fst'
-left :: Pair t => t a b -> a
+left :: Pair p => p a b -> a
 left = fst . toTuple
 
 -- | Pair's version of 'snd'
-right :: Pair t => t a b -> b
+right :: Pair p => p a b -> b
 right = snd . toTuple
 
 -- | Map two functions across the pair, the first one
 -- | being applied to the left, the second to the right
-tmap :: Pair t => (a -> x) -> (b -> y) -> t a b -> t x y
+tmap :: Pair p => (a -> x) -> (b -> y) -> p a b -> p x y
 tmap f g ab = fromTuple (f $ left ab, g $ right ab)
 
 -- | Map one function (of two parameters) across the pair,
 -- | generating a summary value
-summarize :: Pair t => (a -> b -> x) -> t a b -> x
+summarize :: Pair p => (a -> b -> x) -> p a b -> x
 summarize f ab = f (left ab) (right ab)
 
 -- | Merge a pair (of functions) with a pair (of parameters)
 -- | generating a new pair
-merge :: Pair t => t (f -> x) (g -> y) -> t f g -> t x y
+merge :: Pair p => p (f -> x) (g -> y) -> p f g -> p x y
 merge fn xs = fromTuple (left fn $ left xs, right fn $ right xs)
 
 -- | Apply one function to both elements of a homogenous pair
-both :: Pair t => (a -> b) -> t a a -> t b b
+both :: Pair p => (a -> b) -> p a a -> p b b
 both f = tmap f f
