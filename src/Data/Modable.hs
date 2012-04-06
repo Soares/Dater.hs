@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Modable where
 import Data.Pair
+import Data.Maybe (fromMaybe)
 
 -- | A class that allows simple 'arithmetic' betwene
 -- | different types. In simplet types, 'b' is 'Maybe a'
@@ -25,8 +26,8 @@ class Modable a b where
 -- | Helper function for modable pairs
 thread :: Pair p
     => (a -> x -> a) -> (b -> y -> b)   -- The modifying functions
-    -> (p a b) -> (Maybe (p x y))       -- The pair parameters
-    -> (p a b)                          -- The resulting pair
+    -> p a b -> Maybe (p x y)       -- The pair parameters
+    -> p a b                          -- The resulting pair
 thread f g ab = maybe ab (merge $ tmap f g ab)
 
 
@@ -43,4 +44,4 @@ instance (Modable a x, Modable b y, Pair p)
 instance Num a => Modable a (Maybe a) where
     plus a = maybe a (a+)
     minus a = maybe a (a-)
-    clobber a = maybe a id
+    clobber = fromMaybe

@@ -1,10 +1,6 @@
 module Data.Zeroed
     ( Zeroed(zero)
     , predecessors
-    , nexts
-    , nextTo
-    , prevs
-    , prevTo
     ) where
 
 -- | Elements that have a default (zero) position.
@@ -22,33 +18,21 @@ class (Ord a, Enum a) => Zeroed a where
 predecessors :: (Eq a, Ord a, Zeroed a) => a -> [a]
 predecessors a
     | a == zero = []
-    | a > zero = nextTo zero (pred a)
-    | otherwise = prevTo (pred zero) a
+    | a > zero = succTo zero (pred a)
+    | otherwise = predTo (pred zero) a
 
+-- | The list of all values from one point to another, inclusive
+succTo :: (Eq a, Enum a) => a -> a -> [a]
+succTo a b
+    | a == b = [a]
+    | otherwise = a : succTo (succ a) b
+
+-- | The list of all values from one point to backwards to another, inclusive
+predTo :: (Eq a, Enum a) => a -> a -> [a]
+predTo a b
+    | a == b = [a]
+    | otherwise = a : predTo (pred a) b
 
 -- | Simple instances
 instance Zeroed Integer where zero = 0
 instance Zeroed Int where zero = 0
-
-
--- | TODO: Organize
-
--- | The infinite list of values generated from a point
-nexts :: Enum a => a -> [a]
-nexts a = a : nexts (succ a)
-
--- | The list of all values from one point to another, inclusive
-nextTo :: (Eq a, Enum a) => a -> a -> [a]
-nextTo a b
-    | a == b = [a]
-    | otherwise = a : nextTo (succ a) b
-
--- | The infinite list of values generated before a point
-prevs :: Enum a => a -> [a]
-prevs a = a : prevs (pred a)
-
--- | The list of all values from one point to backwards to another, inclusive
-prevTo :: (Eq a, Enum a) => a -> a -> [a]
-prevTo a b
-    | a == b = [a]
-    | otherwise = a : prevTo (pred a) b

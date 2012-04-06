@@ -1,15 +1,35 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Data.DateTime.VarPart ((:/:)(..)) where
+import Control.Applicative
 import Data.Coded
 import Data.Normalize
 import Data.Pair
 import Data.Ranged
 import Data.Zeroed
+import Test.QuickCheck.Arbitrary
 
 -- | A simple combinator, intended for combining types into a date type
-data a :/: b = a :/: b deriving (Eq, Ord)
+data a :/: b = a :/: b
+
+type Normal a b = (Enum a, Normalize a, Ranged b a, Integral b)
+
+-- | Equality is checked post-normalization
+instance (Eq a, Eq b, Normal a b) => Eq (a:/:b) where
+    x == y = let
+        (a:/:b) = normal x
+        (c:/:d) = normal y
+        in a == c && b == d
+
+-- | Ordering is determined post-normalization
+instance (Ord a, Ord b, Normal a b) => Ord (a:/:b) where
+    x <= y = let
+        (a:/:b) = normal x
+        (c:/:d) = normal y
+        in if a == c then b <= d else a < c
 
 -- | Some utilities to treat :/: like a tuple
 instance Pair (:/:) where
@@ -24,24 +44,26 @@ instance (Show a, Show b) => Show (a:/:b) where
     show (a:/:b) = show a ++ "/" ++ show b
 
 -- | Defines the starting point for a date
-instance (Zeroed a, Ranged b a, Integral b) => Zeroed (a:/:b) where
+instance (Zeroed a, Normal a b) => Zeroed (a:/:b) where
     zero = zero :/: start zero
 
 -- | Allows us to generate prior and succeeding dates
-instance (Zeroed a, Enum a, Ord b, Ranged b a, Integral b) => Enum (a:/:b) where
+instance (Zeroed a, Normal a b) => Enum (a:/:b) where
     succ (a:/:b)
+        | not (isNormal (a:/:b)) = succ (normal (a:/:b))
         | b < end a = a :/: succ b
         | otherwise = succ a :/: start a
     pred (a:/:b)
+        | not (isNormal (a:/:b)) = pred (normal (a:/:b))
         | b > start a = a :/: pred b
-        | otherwise = pred a :/: end a
+        | otherwise = pred a :/: end (pred a)
     toEnum = decode . fromIntegral
     fromEnum = fromIntegral . encode
 
 -- | Normalizes the date such that all parts are within their respective
 -- | ranges. By convention, dates shouldn't overflow: they should just get
 -- | bigger and smaller.
-instance (Enum a, Normalize a, Ranged b a, Integral b) => Normalize (a:/:b) where
+instance Normal a b => Normalize (a:/:b) where
     isNormal (a:/:b) = isNormal a && isInRange a b
     normalize (a:/:b)
         | not (isNormal a) = let
@@ -64,6 +86,11 @@ instance (Zeroed a, Integral b, Ranged b a) => Coded (a:/:b) where
     decode = fromTuple . (id **^ elemify) . split
         where (**^) f g (a, b) = (f a, g a b)
 
+-- | Allows QuickCheck testing
+instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where
+    arbitrary = (:/:) <$> arbitrary <*> arbitrary
+    shrink (a:/:b) = [ x:/:b | x <- shrink a ] ++ [ a:/:y | y <- shrink b ]
+
 -- | The size of an element and it's preceeding contexts.
 -- | For example, the size of (Year 2, Month 4) is 14 in the Gregorian
 -- | calendar, because April of Year 2 is the 14th (zero-indexed) month
@@ -78,7 +105,9 @@ size a b = intify a b + sum (map count $ predecessors a)
 -- | (Year:/:Month) and the remainder is used to construct the Day.
 split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
 split n = choose 0 elems where
-    elems = if n >= 0 then nexts zero else prevs (pred zero)
+    elems = if n >= 0 then succs zero else preds (pred zero)
+    succs a = a : succs (succ a)
+    preds a = a : preds (pred a)
     choose _ [] = error "Reached the end of an infinite list"
     choose t (a:as) = let u = t + count a
         in if enough u then (a, leftover t u) else choose u as
