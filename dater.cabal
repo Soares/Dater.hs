@@ -8,4 +8,39 @@ Description:   Lets you declare your own date & time formats
 Author:        Nate Soares
 Maintainer:    nate@natesoares.com
 Build-Type:    Simple
-Cabal-Version: >=1.6
+Cabal-Version: >=1.9.2
+
+Test-Suite test-dater
+  type: exitcode-stdio-1.0
+  main-is: Test/Dater.hs
+  build-depends:
+    Cabal >= 1.9.2,
+    HUnit >= 1.2,
+    QuickCheck >= 2.4,
+    test-framework >= 0.6,
+    test-framework-quickcheck2 >= 0.2,
+    test-framework-hunit >= 0.2.7,
+    base >= 4 && < 5
+  Hs-Source-Dirs: src
+
+Library
+  Build-Depends:
+    parsec >= 3.1 && < 4,
+    containers >= 0.4,
+    template-haskell >= 2 && < 3,
+    base >= 4 && < 5
+  Ghc-Options:   -O2 -Wall
+  Hs-Source-Dirs:  src
+  Exposed-Modules:
+    Coded,
+    ConstPart,
+    Date,
+    Format,
+    Gregorian,
+    Modable,
+    Naturals,
+    Normalize,
+    Pair,
+    Ranged,
+    VarPart,
+    Zeroed

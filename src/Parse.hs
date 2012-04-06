@@ -9,8 +9,7 @@ module Parse
     , slash
     , whitespace
     , whited
-    , atMost
-    , atMost1
+    , liftReadS
     ) where
 import Control.Applicative
 import Data.Maybe (listToMaybe)

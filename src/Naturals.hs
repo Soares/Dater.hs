@@ -8,7 +8,6 @@
 module Naturals where
 import Control.Applicative
 import Control.Arrow
-import Control.Monad (when)
 import Data.Ratio ((%))
 import Language.Haskell.TH hiding (Pred)
 import Modable
@@ -18,7 +17,7 @@ import Text.ParserCombinators.Parsec (many1, digit)
 import Text.Printf
 
 data Zero = Zero
-newtype Succ a = Z { n :: Integer } deriving PrintfArg
+newtype Succ a = Z { _n :: Integer } deriving PrintfArg
 
 instance Show Zero where show = const "0"
 

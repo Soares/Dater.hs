@@ -5,7 +5,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-import Coded
+module Gregorian where
 import ConstPart
 import Date
 import Naturals
