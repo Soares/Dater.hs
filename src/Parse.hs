@@ -11,10 +11,10 @@ module Parse
     , whited
     , liftReadS
     ) where
-import Control.Applicative hiding (many)
+import Control.Applicative
 import Data.Maybe (listToMaybe)
 import Data.Ratio ((%))
-import Text.ParserCombinators.Parsec hiding (Parser, parse)
+import Text.ParserCombinators.Parsec hiding (Parser, parse, many, (<|>))
 
 -- | Shorthand for a parser with no state
 type Parser = GenParser Char ()

@@ -19,12 +19,12 @@ instance (Show d, Show t) => Show (Date d t) where
         frac = show (numerator x) ++ "%" ++ show (denominator x)
 
 instance (Enum d, Coded d, Normalize d, Enum t, Coded t, Normalize t) => Normalize (Date d t) where
-    isNormal (Date d t e) = isNormal d && isNormal t
-    normalize (Date d t e) = (p, Date date time extra) where
-        excess = truncate e
-        extra = e - (fromIntegral excess)
-        (o, time) = normalize (add excess t)
-        (p, date) = normalize (add o d)
+    isNormal (Date d t _) = isNormal d && isNormal t
+    normalize (Date d t e) = (p, Date d' t' e') where
+        excess = truncate e :: Integer
+        e' = e - (fromIntegral excess)
+        (o, t') = normalize (add excess t)
+        (p, d') = normalize (add o d)
         add 0 a = a
         add n a = if n > 0 then add (n-1) (succ a) else add (n+1) (pred a)
 

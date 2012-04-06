@@ -23,8 +23,10 @@ instance Show Zero where show = const "0"
 
 class Natural n
     where natural :: n -> Integer
+
 instance Natural Zero
     where natural = const 0
+
 instance Natural n => Natural (Succ n)
     where natural = const $ 1 + natural (undefined :: n)
 
@@ -52,8 +54,10 @@ instance Natural n => Normalize (Succ n) where
 
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
+
 instance Ord (Succ n) where
     (Z x) <= (Z y) = x <= y
+
 instance Natural n => Num (Succ n) where
     (Z x) + (Z y) = Z (x + y)
     (Z x) * (Z y) = Z (x * y)
@@ -63,6 +67,7 @@ instance Natural n => Num (Succ n) where
     abs = Z . abs . n
 instance Natural n => Real (Succ n) where
     toRational (Z x) = x % 1
+
 instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
@@ -74,7 +79,6 @@ instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
 instance Natural n => Parse (Succ n) where
     parse = (Z . read) <$> many1 digit
-
 
 digits :: Natural n => Succ n -> Int
 digits = length . show . natural
