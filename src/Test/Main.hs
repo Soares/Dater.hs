@@ -3,6 +3,7 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck
 
 import Data.DateTime.Gregorian
+import Data.Naturals
 
 main = defaultMain tests
 
@@ -14,7 +15,9 @@ tests =
         , testProperty "Indempotent YMD"   (propEnumIndempotence :: YMD   -> Bool)
         ]
     , testGroup "HMS"
-        [
+        [ testProperty "Indempotent Hour"   (propEnumIndempotence :: N24 -> Bool)
+        , testProperty "Indempotent Minute" (propEnumIndempotence :: N60 -> Bool)
+        , testProperty "Indempotent HMS"    (propEnumIndempotence :: HMS -> Bool)
         ]
     ]
 

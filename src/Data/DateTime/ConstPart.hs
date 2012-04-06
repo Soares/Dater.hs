@@ -5,10 +5,12 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.DateTime.ConstPart ((:::)(..)) where
+import Control.Applicative
 import Control.Arrow
 import Data.Coded
 import Data.Normalize
 import Data.Pair
+import Test.QuickCheck.Arbitrary
 
 -- | A simple combinator, inteded for combining types into a time type.
 data a ::: b = a ::: b
@@ -90,6 +92,11 @@ instance Normal a b => Integral (a:::b) where
         d = encode xy
         (q, r) = fromTuple $ n `quotRem` d
         in (fromInteger q, fromInteger r)
+
+-- | Allows QuickCheck testing
+instance (Arbitrary a, Arbitrary b) => Arbitrary (a:::b) where
+    arbitrary = (:::) <$> arbitrary <*> arbitrary
+    shrink (a:::b) = [ x:::b | x <- shrink a ] ++ [ a:::y | y <- shrink b ]
 
 -- | Allows us to encode and decode the time
 instance (Integral a, Integral b, Bounded b) => Coded (a:::b) where
