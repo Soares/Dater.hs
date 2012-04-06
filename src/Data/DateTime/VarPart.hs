@@ -105,7 +105,9 @@ size a b = intify a b + sum (map count $ predecessors a)
 -- | (Year:/:Month) and the remainder is used to construct the Day.
 split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
 split n = choose 0 elems where
-    elems = if n >= 0 then nexts zero else prevs (pred zero)
+    elems = if n >= 0 then succs zero else preds (pred zero)
+    succs a = a : succs (succ a)
+    preds a = a : preds (pred a)
     choose _ [] = error "Reached the end of an infinite list"
     choose t (a:as) = let u = t + count a
         in if enough u then (a, leftover t u) else choose u as

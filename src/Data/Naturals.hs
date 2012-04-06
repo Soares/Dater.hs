@@ -9,6 +9,7 @@ module Data.Naturals where
 import Control.Applicative
 import Control.Arrow
 import Data.Ratio ((%))
+import Data.Maybe (fromMaybe)
 import Data.Modable
 import Data.Normalize
 import Language.Haskell.TH hiding (Pred)
@@ -17,40 +18,35 @@ import Text.Parse
 import Text.ParserCombinators.Parsec (many1, digit)
 import Text.Printf
 
--- TODO: Fix spacing
--- TODO: rename 'n'
-
-data Zero = Zero
-newtype Succ a = Z { _n :: Integer } deriving (PrintfArg, Arbitrary)
-
-instance Show Zero where show = const "0"
-
+-- | A class for natural numbers.
 class Natural n
     where natural :: n -> Integer
 
-instance Natural Zero
-    where natural = const 0
+-- | The Zero data type
+data Zero = Zero
+instance Show Zero where show = const "0"
+instance Natural Zero where natural = const 0
+
+-- | A type-system natural. Holds an integer which behaves somewhat like
+-- | a member of Z mod n (see instances, below.)
+newtype Succ a = Z { nat :: Integer } deriving (PrintfArg, Arbitrary)
 
 instance Natural n => Natural (Succ n)
     where natural = const $ 1 + natural (undefined :: n)
 
-class Pred n m | n -> m, m -> n
-instance Pred (Succ Zero) Zero
-instance Pred (Succ n) m => Pred (Succ (Succ n)) (Succ m)
-
-
-class Natural z => PosInt z where
-    n :: z -> Integer
-
-instance Natural z => PosInt (Succ z) where
-    n = _n
-
 instance Natural n => Enum (Succ n) where
     toEnum = Z . fromIntegral
-    fromEnum = fromIntegral . n
+    fromEnum = fromIntegral . nat
+
 instance Natural n => Bounded (Succ n) where
     minBound = Z 0
     maxBound = Z $ natural (undefined :: n)
+
+-- | Puts the integer back into bounds. The integer in a Succ type is
+-- | allowed to go out of bounds. The `normalize` function returns
+-- | (o, n) where `o` is the number of overflows and `n` is the Succ type
+-- | with the integer normalized to be back in bounds [0,N).
+-- | The `normalize` function returns just `n`.
 instance Natural n => Normalize (Succ n) where
     isNormal z = z >= minBound && z <= maxBound
     normalize = first fromIntegral . (`quotRem` m)
@@ -67,26 +63,29 @@ instance Natural n => Num (Succ n) where
     (Z x) * (Z y) = Z (x * y)
     (Z x) - (Z y) = Z (x - y)
     fromInteger = Z
-    signum = Z . signum . n
-    abs = Z . abs . n
+    signum = Z . signum . nat
+    abs = Z . abs . nat
+
 instance Natural n => Real (Succ n) where
     toRational (Z x) = x % 1
 
 instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
+
 instance Natural n => Modable (Succ n) (Maybe (Succ n)) where
     plus a = maybe a (a+)
     minus a = maybe a (a-)
-    clobber a = maybe a id
+    clobber = fromMaybe
+
 instance Natural n => Show (Succ n) where
-    show z@(Z x) = printf (printf "%%0%dd" $ digits z) x where
+    show z@(Z x) = printf (printf "%%0%dd" $ digits $ normal z) x where
+        digits = length . show . natural
+
 instance Natural n => Parse (Succ n) where
     parse = (Z . read) <$> many1 digit
 
-digits :: Natural n => Succ n -> Int
-digits = length . show . natural
-
+-- The first 256 shortcuts for Succ types.
 -- Gross, yes, but until template haskell allows you to assign types to
 -- types we need a bunch of type synonyms.
 -- For instance, we can't say "type N60 = $(zMod 60)" at the moment,
@@ -354,6 +353,10 @@ type N254 = Succ N253
 type N255 = Succ N254
 type N256 = Succ N255
 
+-- | A template haskell macro for generating more Succ types.
+-- | Due to TH limitations, you can't say N60 = $(zMod 60),
+-- | you have to instead use $(zMod 60) wherever you would have
+-- | used N60 in the first place.
 zMod :: Int -> TypeQ
 zMod 0 = [t|Zero|]
 zMod x = [t|Succ $(zMod $ x-1)|]
