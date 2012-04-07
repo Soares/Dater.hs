@@ -7,15 +7,13 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
-import Test.Data.DateTime
-import Test.Data.Naturals
-import Test.Data.Pair
-import Test.Data.Zeroed
-
 import Data.DateTime.Gregorian
 import Data.DateTime.Kaol
-import Data.Naturals
-import Data.Normalize
+import Data.DateTime.Tests
+import Data.Naturals.Tests
+import Data.Normalize.Tests
+import Data.Pair.Tests
+import Data.Zeroed.Tests
 
 main :: IO ()
 main = defaultMain tests

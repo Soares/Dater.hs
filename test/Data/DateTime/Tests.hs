@@ -2,16 +2,16 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TypeFamilies #-}
-module Test.Data.DateTime where
+module Data.DateTime.Tests where
+import Data.Coded.Tests
 import Data.DateTime
+import Data.Enum.Tests
 import Data.Modable
+import Data.Modable.Tests
 import Data.Normalize
+import Data.Normalize.Tests
+import Data.Pair.Tests
 import Data.Zeroed
-import Test.Data.Enum
-import Test.Data.Coded
-import Test.Data.Modable
-import Test.Data.Normalize
-import Test.Data.Pair
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
