@@ -46,3 +46,11 @@ class Displayable a where
     abbreviation n = take n . name
     qualifier :: a -> String
     qualifier = const ""
+
+instance Displayable Integer where
+    name = show
+    number = id
+
+instance Displayable Int where
+    name = show
+    number = toInteger
