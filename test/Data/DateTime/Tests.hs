@@ -10,8 +10,6 @@ import Data.Modable
 import Data.Modable.Tests
 import Data.Normalize
 import Data.Normalize.Tests
-import Data.Pair.Tests
-import Data.Zeroed
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck

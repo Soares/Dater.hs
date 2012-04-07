@@ -5,7 +5,6 @@ import Data.Normalize
 import Data.Enum.Tests
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck
 
 testNaturals :: Test
 testNaturals = testGroup "Naturals"
