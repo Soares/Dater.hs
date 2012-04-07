@@ -19,8 +19,10 @@ testModable _ = testGroup "maybe math"
         minus (plus a b) b == a)
     , testProperty "minus→plus" (\(a::a) (b::Relative a) ->
         plus (minus a b) b == a)
-    , testProperty "extract clobber" (\(a::a) (b::Relative a) ->
+    , testProperty "clobber" (\(a::a) (b::Relative a) ->
         if isNothing b
             then clobber a b == a
             else clobber a b `like` b)
+    , testProperty "absify relify" (\(a::a) -> absify (relify a) == Just a)
+    , testProperty "like" (\(a::a) -> a `like` relify a)
     ]
