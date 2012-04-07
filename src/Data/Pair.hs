@@ -12,6 +12,9 @@ module Data.Pair
 class Pair p where
     toTuple :: p a b -> (a, b)
     fromTuple :: (a, b) -> p a b
+    fromTuple = uncurry build
+    build :: a -> b -> p a b
+    build = (fromTuple .) . (,)
 
 -- | The simple tuple instance
 instance Pair (,) where
@@ -28,7 +31,7 @@ right = snd . toTuple
 
 -- | Map two functions across the pair, the first one
 -- | being applied to the left, the second to the right
-tmap :: Pair p => (a -> x) -> (b -> y) -> p a b -> p x y
+tmap :: (Pair p, Pair q) => (a -> x) -> (b -> y) -> p a b -> q x y
 tmap f g ab = fromTuple (f $ left ab, g $ right ab)
 
 -- | Map one function (of two parameters) across the pair,
@@ -38,9 +41,9 @@ summarize f ab = f (left ab) (right ab)
 
 -- | Merge a pair (of functions) with a pair (of parameters)
 -- | generating a new pair
-merge :: Pair p => p (f -> x) (g -> y) -> p f g -> p x y
+merge :: (Pair p, Pair q) => p (f -> x) (g -> y) -> p f g -> q x y
 merge fn xs = fromTuple (left fn $ left xs, right fn $ right xs)
 
 -- | Apply one function to both elements of a homogenous pair
-both :: Pair p => (a -> b) -> p a a -> p b b
+both :: (Pair p, Pair q) => (a -> b) -> p a a -> q b b
 both f = tmap f f

@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Naturals where
 import Control.Applicative
@@ -73,10 +74,15 @@ instance Natural n => Integral (Succ n) where
     toInteger (Z x) = x
     quotRem (Z x) (Z y) = (fromInteger *** fromInteger) (quotRem x y)
 
-instance Natural n => Modable (Succ n) (Maybe (Succ n)) where
+instance Natural n => Relable (Succ n) where
+    type Relative (Succ n) = Maybe (Succ n)
+instance Natural n => Modable (Succ n) where
     plus a = maybe a (a+)
     minus a = maybe a (a-)
     clobber = fromMaybe
+    like a = maybe True (a ==)
+    absify = id
+    relify = pure
 
 instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits $ normal z) x where

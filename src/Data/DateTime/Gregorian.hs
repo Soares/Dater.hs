@@ -5,10 +5,12 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 module Data.DateTime.Gregorian where
 import Data.DateTime.ConstPart
 import Data.DateTime.DateTime
 import Data.DateTime.VarPart
+import Data.Modable
 import Data.Naturals
 import Data.Normalize
 import Data.Ranged
@@ -20,7 +22,9 @@ import Text.Printf (printf)
 
 
 newtype Year = Y Integer deriving
-    (Eq, Ord, Num, Real, Enum, Integral, Parse, Normalize, Arbitrary)
+    ( Eq, Ord, Num, Real, Enum, Integral
+    , Parse, Normalize, Arbitrary, Modable)
+instance Relable Year where type Relative Year = Maybe Year
 instance Zeroed Year where zero = Y 1
 instance Show Year where show (Y y) = show y
 isLeapYear :: Year -> Bool
@@ -32,7 +36,8 @@ isLeapYear y
 
 
 newtype Month = M Int deriving
-    (Eq, Ord, Num, Real, Enum, Integral, Parse, Random)
+    (Eq, Ord, Num, Real, Enum, Integral, Parse, Random, Modable)
+instance Relable Month where type Relative Month = Maybe Month
 instance Arbitrary Month where
     arbitrary = sized $ \s -> choose (M $ - (max s 1000), M (max s 1000))
     shrink (M m) = map M (shrink m)
@@ -43,7 +48,8 @@ instance Ranged Month Year where
 
 
 newtype Day = D Int deriving
-    (Eq, Ord, Num, Real, Enum, Integral, Parse, Random)
+    (Eq, Ord, Num, Real, Enum, Integral, Parse, Random, Modable)
+instance Relable Day where type Relative Day = Maybe Day
 instance Arbitrary Day where
     arbitrary = sized $ \s -> choose (D $ - (max s 1000), D (max s 1000))
     shrink (D d) = map D (shrink d)
