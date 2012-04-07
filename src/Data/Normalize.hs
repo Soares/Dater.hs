@@ -12,6 +12,8 @@ class Normalize a where
     normalize :: a -> (Int, a)
     normal :: a -> a
     normal = snd . normalize
+    overflow :: a -> Int
+    overflow = fst . normalize
     isNormal :: a -> Bool
 
 instance Normalize Integer where

@@ -1,25 +1,28 @@
-import Test.Framework (defaultMain, testGroup)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+import Data.DateTime.VarPart
+import Data.DateTime.ConstPart
+
+import Test.Framework
+import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
+
+import Test.Data.DateTime.ConstPart
+import Test.Data.DateTime.VarPart
+import Test.Data.Naturals
+import Test.Data.Zeroed
 
 import Data.DateTime.Gregorian
 import Data.Naturals
+import Data.Normalize
 
+main :: IO ()
 main = defaultMain tests
 
+tests :: [Test]
 tests =
-    [ testGroup "YMD"
-        [ testProperty "Indempotent Year"  (propEnumIndempotence :: Year  -> Bool)
-        , testProperty "Indempotent Month" (propEnumIndempotence :: Month -> Bool)
-        , testProperty "Indempotent Day"   (propEnumIndempotence :: Day   -> Bool)
-        , testProperty "Indempotent YMD"   (propEnumIndempotence :: YMD   -> Bool)
-        ]
-    , testGroup "HMS"
-        [ testProperty "Indempotent Hour"   (propEnumIndempotence :: N24 -> Bool)
-        , testProperty "Indempotent Minute" (propEnumIndempotence :: N60 -> Bool)
-        , testProperty "Indempotent HMS"    (propEnumIndempotence :: HMS -> Bool)
-        ]
+    [ testGroup "YMD" [testVarPart (undefined::YMD)]
+    , testGroup "HMS" [testConstPart (undefined::HMS)]
+    , testNaturals
+    , testZeroed
     ]
-
-propEnumIndempotence :: (Enum a, Eq a) => a -> Bool
-propEnumIndempotence a = succ (pred a) == a

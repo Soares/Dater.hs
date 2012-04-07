@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.DateTime.ConstPart ((:::)(..)) where
+module Data.DateTime.ConstPart ((:::)(..), Composable) where
 import Control.Applicative
 import Control.Arrow
 import Data.Coded
@@ -15,7 +15,7 @@ import Test.QuickCheck.Arbitrary
 -- | A simple combinator, inteded for combining types into a time type.
 data a ::: b = a ::: b
 
-type Normal a b =
+type Composable a b =
     ( Bounded a
     , Bounded b
     , Integral a
@@ -24,14 +24,14 @@ type Normal a b =
     )
 
 -- | Equality is checked post-normalization
-instance Normal a b => Eq (a:::b) where
+instance Composable a b => Eq (a:::b) where
     x == y = let
         (a:::b) = normal x
         (c:::d) = normal y
         in a == c && b == d
 
 -- | Ordering is determined post-normalization
-instance Normal a b => Ord (a:::b) where
+instance Composable a b => Ord (a:::b) where
     x <= y = let
         (a:::b) = normal x
         (c:::d) = normal y
@@ -56,7 +56,7 @@ instance (Bounded a, Bounded b) => Bounded (a:::b) where
 
 -- | Normalizes the time, such that all parts are within their respective
 -- | boundaries. Normalization is NOT indempotent, as there may be overflow.
-instance Normal a b => Normalize (a:::b) where
+instance Composable a b => Normalize (a:::b) where
     isNormal (a:::b) = isNormal a && b >= minBound && b <= maxBound
     normalize (a:::b)
         | isNormal (a:::b) = (0, a:::b)
@@ -75,17 +75,17 @@ instance (Integral a, Integral b, Bounded b) => Num (a:::b) where
     fromInteger = decode
 
 -- | Really just necessary so that we can get Integral support
-instance Normal a b => Real (a:::b) where
+instance Composable a b => Real (a:::b) where
     toRational = toRational . encode
 
 -- | Really just necessary so that we can get Integral support
-instance Normal a b => Enum (a:::b) where
+instance Composable a b => Enum (a:::b) where
     toEnum = decode . toInteger
     fromEnum = fromIntegral . encode
 
 -- | Really we just want the toInteger function.
 -- | The quotRem implementation is quite contrived.
-instance Normal a b => Integral (a:::b) where
+instance Composable a b => Integral (a:::b) where
     toInteger = encode
     quotRem ab xy = let
         n = encode ab
