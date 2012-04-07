@@ -13,6 +13,7 @@ import Test.Data.Enum
 import Test.Data.Modable
 import Test.Data.Naturals
 import Test.Data.Normalize
+import Test.Data.Pair
 import Test.Data.Zeroed
 
 import Data.DateTime.Gregorian
@@ -30,12 +31,14 @@ tests =
         , testModable (undefined::YMD)
         , testNormal (undefined::YMD)
         , testProperty "no overflow" (\(a::YMD) -> fst (normalize a) == 0)
+        , testPair (undefined::YMD)
         ]
     , testGroup "HMS"
         [ testEnum (undefined::HMS)
         , testCoded (undefined::HMS)
         , testModable (undefined::HMS)
-        , testNormal (undefined::YMD)
+        , testNormal (undefined::HMS)
+        , testPair (undefined::HMS)
         , testProperty "reconstructible" (\(a::HMS) ->
             let (o, b) = normalize a
                 size = succ (maxBound - minBound :: HMS)
