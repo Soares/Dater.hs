@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 import Data.DateTime.VarPart
 import Data.DateTime.ConstPart
 
@@ -10,10 +11,12 @@ import Test.QuickCheck
 import Test.Data.Coded
 import Test.Data.Enum
 import Test.Data.Modable
+import Test.Data.Normalize
 import Test.Data.Zeroed
 
 import Data.DateTime.Gregorian
 import Data.Naturals
+import Data.Normalize
 
 main :: IO ()
 main = defaultMain tests
@@ -24,6 +27,8 @@ tests =
         [ testEnum (undefined::YMD)
         , testCoded (undefined::YMD)
         , testModable (undefined::YMD)
+        , testNormal (undefined::YMD)
+        , testProperty "no overflow" (\(a::YMD) -> fst (normalize a) == 0)
         ]
     , testGroup "Naturals"
         [ testEnum (undefined::N1)
@@ -36,6 +41,7 @@ tests =
         [ testEnum (undefined::HMS)
         , testCoded (undefined::HMS)
         , testModable (undefined::HMS)
+        , testNormal (undefined::YMD)
         ]
     , testZeroed
     ]
