@@ -1,11 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Test.Data.Naturals where
+module Data.Naturals.Tests where
 import Data.Naturals
 import Data.Normalize
-import Test.Data.Enum
+import Data.Enum.Tests
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck
 
 testNaturals :: Test
 testNaturals = testGroup "Naturals"

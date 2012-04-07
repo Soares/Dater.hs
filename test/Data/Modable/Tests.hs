@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
-module Test.Data.Modable where
+module Data.Modable.Tests where
 import Data.Maybe (isNothing)
 import Data.Modable
 import Test.Framework
