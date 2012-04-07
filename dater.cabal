@@ -50,4 +50,5 @@ Library
     Data.Ranged,
     Data.Zeroed,
     Text.Format,
-    Text.Parse
+    Text.Parse,
+    Text.Chunk
