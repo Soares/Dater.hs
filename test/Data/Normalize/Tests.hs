@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Test.Data.Normalize where
+module Data.Normalize.Tests where
 import Data.Normalize
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2

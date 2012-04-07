@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Test.Data.Enum where
+module Data.Enum.Tests where
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck

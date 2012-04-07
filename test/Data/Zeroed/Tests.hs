@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Test.Data.Zeroed where
+module Data.Zeroed.Tests where
 import Data.Zeroed
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2

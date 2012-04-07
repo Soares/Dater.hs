@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.DateTime.VarPart ((:/:)(..), Composable) where
+module Data.DateTime.VarPart ((:/:)(..), Composable, size, split) where
 import Control.Applicative
 import Data.Coded
 import Data.Normalize
@@ -52,7 +52,7 @@ instance (Zeroed a, Composable a b) => Enum (a:/:b) where
     succ (a:/:b)
         | not (isNormal (a:/:b)) = succ (normal (a:/:b))
         | b < end a = a :/: succ b
-        | otherwise = succ a :/: start a
+        | otherwise = succ a :/: start (succ a)
     pred (a:/:b)
         | not (isNormal (a:/:b)) = pred (normal (a:/:b))
         | b > start a = a :/: pred b
@@ -73,16 +73,18 @@ instance Composable a b => Normalize (a:/:b) where
         | isInRange a b = (0, a:/:b)
         | b > end a = let
             a' = succ a
-            b' = fromInteger $ toInteger b - count a
-            in normalize $ a' :/: b'
+            adjusted = b + start a' - start a
+            delta = fromInteger $ count a
+            in normalize $ a' :/: (adjusted - delta)
         | otherwise = let
             a' = pred a
-            b' = fromInteger $ toInteger b + count a'
-            in normalize $ a' :/: b'
+            adjusted = b + start a' - start a
+            delta = fromInteger $ count a'
+            in normalize $ a' :/: (adjusted + delta)
 
 -- | Allows us to encode and decode the date
-instance (Zeroed a, Integral b, Ranged b a) => Coded (a:/:b) where
-    encode (a:/:b) = size a b
+instance (Zeroed a, Composable a b) => Coded (a:/:b) where
+    encode = (size <$> left <*> right) . normal
     decode = fromTuple . (id **^ elemify) . split
         where (**^) f g (a, b) = (f a, g a b)
 
