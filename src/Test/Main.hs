@@ -11,6 +11,7 @@ import Test.QuickCheck
 import Test.Data.Coded
 import Test.Data.Enum
 import Test.Data.Modable
+import Test.Data.Naturals
 import Test.Data.Normalize
 import Test.Data.Zeroed
 
@@ -30,18 +31,17 @@ tests =
         , testNormal (undefined::YMD)
         , testProperty "no overflow" (\(a::YMD) -> fst (normalize a) == 0)
         ]
-    , testGroup "Naturals"
-        [ testEnum (undefined::N1)
-        , testEnum (undefined::N24)
-        , testEnum (undefined::N60)
-        , testEnum (undefined::N100)
-        , testEnum (undefined::N256)
-        ]
     , testGroup "HMS"
         [ testEnum (undefined::HMS)
         , testCoded (undefined::HMS)
         , testModable (undefined::HMS)
         , testNormal (undefined::YMD)
+        , testProperty "reconstructible" (\(a::HMS) ->
+            let (o, b) = normalize a
+                size = succ (maxBound - minBound :: HMS)
+                x = o * fromIntegral size
+            in (x + fromIntegral b) == fromIntegral a)
         ]
+    , testNaturals
     , testZeroed
     ]

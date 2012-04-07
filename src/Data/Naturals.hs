@@ -50,8 +50,10 @@ instance Natural n => Bounded (Succ n) where
 -- | The `normalize` function returns just `n`.
 instance Natural n => Normalize (Succ n) where
     isNormal z = z >= minBound && z <= maxBound
-    normalize = first fromIntegral . (`quotRem` m)
-        where m = Z $ natural (undefined :: Succ n)
+    normalize z = (o, x) where
+        n = natural z
+        x = z `mod` Z n
+        o = fromIntegral z `div` fromIntegral n
 
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
@@ -302,62 +304,6 @@ type N197 = Succ N196
 type N198 = Succ N197
 type N199 = Succ N198
 type N200 = Succ N199
-type N201 = Succ N200
-type N202 = Succ N201
-type N203 = Succ N202
-type N204 = Succ N203
-type N205 = Succ N204
-type N206 = Succ N205
-type N207 = Succ N206
-type N208 = Succ N207
-type N209 = Succ N208
-type N210 = Succ N209
-type N211 = Succ N210
-type N212 = Succ N211
-type N213 = Succ N212
-type N214 = Succ N213
-type N215 = Succ N214
-type N216 = Succ N215
-type N217 = Succ N216
-type N218 = Succ N217
-type N219 = Succ N218
-type N220 = Succ N219
-type N221 = Succ N220
-type N222 = Succ N221
-type N223 = Succ N222
-type N224 = Succ N223
-type N225 = Succ N224
-type N226 = Succ N225
-type N227 = Succ N226
-type N228 = Succ N227
-type N229 = Succ N228
-type N230 = Succ N229
-type N231 = Succ N230
-type N232 = Succ N231
-type N233 = Succ N232
-type N234 = Succ N233
-type N235 = Succ N234
-type N236 = Succ N235
-type N237 = Succ N236
-type N238 = Succ N237
-type N239 = Succ N238
-type N240 = Succ N239
-type N241 = Succ N240
-type N242 = Succ N241
-type N243 = Succ N242
-type N244 = Succ N243
-type N245 = Succ N244
-type N246 = Succ N245
-type N247 = Succ N246
-type N248 = Succ N247
-type N249 = Succ N248
-type N250 = Succ N249
-type N251 = Succ N250
-type N252 = Succ N251
-type N253 = Succ N252
-type N254 = Succ N253
-type N255 = Succ N254
-type N256 = Succ N255
 
 -- | A template haskell macro for generating more Succ types.
 -- | Due to TH limitations, you can't say N60 = $(zMod 60),
