@@ -8,12 +8,9 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
-import Test.Data.Coded
-import Test.Data.Enum
-import Test.Data.Modable
+import Test.Data.DateTime.ConstPart
+import Test.Data.DateTime.VarPart
 import Test.Data.Naturals
-import Test.Data.Normalize
-import Test.Data.Pair
 import Test.Data.Zeroed
 
 import Data.DateTime.Gregorian
@@ -25,26 +22,8 @@ main = defaultMain tests
 
 tests :: [Test]
 tests =
-    [ testGroup "YMD"
-        [ testEnum (undefined::YMD)
-        , testCoded (undefined::YMD)
-        , testModable (undefined::YMD)
-        , testNormal (undefined::YMD)
-        , testProperty "no overflow" (\(a::YMD) -> fst (normalize a) == 0)
-        , testPair (undefined::YMD)
-        ]
-    , testGroup "HMS"
-        [ testEnum (undefined::HMS)
-        , testCoded (undefined::HMS)
-        , testModable (undefined::HMS)
-        , testNormal (undefined::HMS)
-        , testPair (undefined::HMS)
-        , testProperty "reconstructible" (\(a::HMS) ->
-            let (o, b) = normalize a
-                size = succ (maxBound - minBound :: HMS)
-                x = o * fromIntegral size
-            in (x + fromIntegral b) == fromIntegral a)
-        ]
+    [ testGroup "YMD" [testVarPart (undefined::YMD)]
+    , testGroup "HMS" [testConstPart (undefined::HMS)]
     , testNaturals
     , testZeroed
     ]

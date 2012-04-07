@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.DateTime.VarPart ((:/:)(..)) where
+module Data.DateTime.VarPart ((:/:)(..), Composable) where
 import Control.Applicative
 import Data.Coded
 import Data.Normalize
@@ -15,17 +15,17 @@ import Test.QuickCheck.Arbitrary
 -- | A simple combinator, intended for combining types into a date type
 data a :/: b = a :/: b
 
-type Normal a b = (Enum a, Normalize a, Ranged b a, Integral b)
+type Composable a b = (Enum a, Normalize a, Ranged b a, Integral b)
 
 -- | Equality is checked post-normalization
-instance (Eq a, Eq b, Normal a b) => Eq (a:/:b) where
+instance (Eq a, Eq b, Composable a b) => Eq (a:/:b) where
     x == y = let
         (a:/:b) = normal x
         (c:/:d) = normal y
         in a == c && b == d
 
 -- | Ordering is determined post-normalization
-instance (Ord a, Ord b, Normal a b) => Ord (a:/:b) where
+instance (Ord a, Ord b, Composable a b) => Ord (a:/:b) where
     x <= y = let
         (a:/:b) = normal x
         (c:/:d) = normal y
@@ -44,11 +44,11 @@ instance (Show a, Show b) => Show (a:/:b) where
     show (a:/:b) = show a ++ "/" ++ show b
 
 -- | Defines the starting point for a date
-instance (Zeroed a, Normal a b) => Zeroed (a:/:b) where
+instance (Zeroed a, Composable a b) => Zeroed (a:/:b) where
     zero = zero :/: start zero
 
 -- | Allows us to generate prior and succeeding dates
-instance (Zeroed a, Normal a b) => Enum (a:/:b) where
+instance (Zeroed a, Composable a b) => Enum (a:/:b) where
     succ (a:/:b)
         | not (isNormal (a:/:b)) = succ (normal (a:/:b))
         | b < end a = a :/: succ b
@@ -63,7 +63,7 @@ instance (Zeroed a, Normal a b) => Enum (a:/:b) where
 -- | Normalizes the date such that all parts are within their respective
 -- | ranges. By convention, dates shouldn't overflow: they should just get
 -- | bigger and smaller.
-instance Normal a b => Normalize (a:/:b) where
+instance Composable a b => Normalize (a:/:b) where
     isNormal (a:/:b) = isNormal a && isInRange a b
     normalize (a:/:b)
         | not (isNormal a) = let
