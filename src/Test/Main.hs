@@ -7,13 +7,13 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
-import Test.Data.DateTime.ConstPart
-import Test.Data.DateTime.VarPart
+import Test.Data.DateTime.DateTime
 import Test.Data.Naturals
+import Test.Data.Pair
 import Test.Data.Zeroed
 
-import qualified Data.DateTime.Gregorian as Gregorian
-import qualified Data.DateTime.Kaol as Kaol
+import Data.DateTime.Gregorian
+import Data.DateTime.Kaol
 import Data.Naturals
 import Data.Normalize
 
@@ -22,10 +22,9 @@ main = defaultMain tests
 
 tests :: [Test]
 tests =
-    [ testGroup "Gregorian YMD" [testVarPart (undefined::Gregorian.YMD)]
-    , testGroup "Gregorian HMS" [testConstPart (undefined::Gregorian.HMS)]
-    , testGroup "Kaol YMD" [testVarPart (undefined::Kaol.YMD)]
-    , testGroup "Kaol HMS" [testConstPart (undefined::Kaol.HMS)]
+    [ testGroup "Gregorian" [testDateTime  (undefined::Gregorian)]
+    , testGroup "Kaol" [testDateTime (undefined::Kaol)]
     , testNaturals
+    , testPairs
     , testZeroed
     ]
