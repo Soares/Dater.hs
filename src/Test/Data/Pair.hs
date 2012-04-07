@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Test.Data.Pair where
-import Data.DateTime.DateTime ((:::),(:/:))
+import Data.DateTime ((:::),(:/:))
 import Data.Pair
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2

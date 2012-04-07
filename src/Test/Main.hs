@@ -7,7 +7,7 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
-import Test.Data.DateTime.DateTime
+import Test.Data.DateTime
 import Test.Data.Naturals
 import Test.Data.Pair
 import Test.Data.Zeroed

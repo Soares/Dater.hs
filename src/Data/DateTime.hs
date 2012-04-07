@@ -3,17 +3,17 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.DateTime.DateTime
+module Data.DateTime
     ( DateTime(..)
-    , (:::)
-    , (:/:)
+    , (:::)(..)
+    , (:/:)(..)
     , DateLike
     , TimeLike
     ) where
 import Control.Applicative
 import Data.Coded
-import Data.DateTime.ConstPart ((:::))
-import Data.DateTime.VarPart ((:/:))
+import Data.DateTime.ConstPart ((:::)(..))
+import Data.DateTime.VarPart ((:/:)(..))
 import Data.Modable
 import Data.Normalize
 import Data.Ratio (numerator, denominator)

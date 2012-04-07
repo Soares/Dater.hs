@@ -2,8 +2,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TypeFamilies #-}
-module Test.Data.DateTime.DateTime where
-import Data.DateTime.DateTime ((:/:), (:::), DateLike, TimeLike, DateTime)
+module Test.Data.DateTime where
+import Data.DateTime
 import Data.Modable
 import Data.Normalize
 import Data.Zeroed
@@ -16,11 +16,7 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
-type Behaved x r =
-    ( Arbitrary x
-    , Arbitrary r
-    , Relative x ~ Maybe r
-    )
+type Behaved x r = (Arbitrary x, Arbitrary r, Relative x ~ Maybe r)
 
 testDate :: forall d r. (DateLike d, Behaved d r) => d -> Test
 testDate d = testGroup "date composition"
@@ -45,10 +41,8 @@ testTime t = testGroup "time composition"
     ]
 
 testDateTime :: forall d t r s.
-    ( DateLike d
-    , TimeLike t
-    , Behaved d r
-    , Behaved t s
+    ( DateLike d, Behaved d r
+    , TimeLike t, Behaved t s
     ) => DateTime d t -> Test
 testDateTime _ = testGroup "DateTime"
     [ testDate (undefined::d)

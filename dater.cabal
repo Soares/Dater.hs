@@ -37,10 +37,11 @@ Library
   Hs-Source-Dirs:  src
   Exposed-Modules:
     Data.Coded,
+    Data.DateTime,
     Data.DateTime.ConstPart,
-    Data.DateTime.DateTime,
-    Data.DateTime.Gregorian,
     Data.DateTime.VarPart,
+    Data.DateTime.Gregorian,
+    Data.DateTime.Kaol,
     Data.Modable,
     Data.Naturals,
     Data.Normalize,

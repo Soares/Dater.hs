@@ -7,9 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 module Data.DateTime.Gregorian where
-import Data.DateTime.ConstPart
-import Data.DateTime.DateTime
-import Data.DateTime.VarPart
+import Data.DateTime
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
