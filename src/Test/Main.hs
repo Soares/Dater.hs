@@ -3,7 +3,6 @@
 import Data.DateTime.VarPart
 import Data.DateTime.ConstPart
 
-
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck

@@ -38,7 +38,7 @@ thread :: (Pair p, Pair q, Relable a, Relable b)
 thread f g ab = maybe ab (merge $ tmap f g ab)
 
 instance (Relable a, Relable b, Pair p) => Relable (p a b) where
-    type Relative (p a b) = Maybe ((Relative a), (Relative b))
+    type Relative (p a b) = Maybe (Relative a, Relative b)
 
 instance (Modable a, Modable b, Pair p) => Modable (p a b) where
     plus = thread plus plus
@@ -48,7 +48,7 @@ instance (Modable a, Modable b, Pair p) => Modable (p a b) where
     like p (Just q) = (left p `like` left q) && (right p `like` right q)
     relify p = Just (build (relify $ left p) (relify $ right p))
     absify = (join =<<) where
-        join p = build <$> (absify $ left p) <*> (absify $ right p)
+        join p = build <$> absify (left p) <*> absify (right p)
 
 
 instance Relable Integer where type Relative Integer = Maybe Integer
