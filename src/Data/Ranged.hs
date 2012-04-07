@@ -8,9 +8,12 @@ module Data.Ranged
     , intify
     , elemify
     , isInRange
+    , maxMag
     ) where
 import Control.Applicative
 import Control.Arrow
+import System.Random (Random)
+import Test.QuickCheck (sized, choose, Gen)
 
 
 -- | The counterpart to `Bounded`, Ranged elements `a` are bounded
@@ -53,3 +56,10 @@ elements = enumFromTo <$> start <*> end
 -- | The count of all values in the range
 count :: (Integral a, Ranged a x) => x -> Integer
 count x = succ $ fromIntegral (end x) - fromIntegral (start x)
+
+
+-- == Testing Utilities == --
+
+maxMag :: (Random a, Integral a) => Int -> Gen a
+maxMag n = sized $ \s -> choose $ from (negate $ max s n, max s n)
+    where from = fromIntegral *** fromIntegral

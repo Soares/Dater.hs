@@ -37,21 +37,15 @@ isLeapYear y
 newtype Month = M Int deriving
     (Eq, Ord, Num, Real, Enum, Integral, Parse, Random, Modable)
 instance Relable Month where type Relative Month = Maybe Month
-instance Arbitrary Month where
-    arbitrary = sized $ \s -> choose (M $ - (max s 1000), M (max s 1000))
-    shrink (M m) = map M (shrink m)
+instance Arbitrary Month where arbitrary = maxMag 1000
 instance Show Month where show (M m) = printf "%02d" m
-instance Ranged Month Year where
-    start = const 0
-    end = const 12
+instance Ranged Month Year where range = const (0, 12)
 
 
 newtype Day = D Int deriving
     (Eq, Ord, Num, Real, Enum, Integral, Parse, Random, Modable)
 instance Relable Day where type Relative Day = Maybe Day
-instance Arbitrary Day where
-    arbitrary = sized $ \s -> choose (D $ - (max s 1000), D (max s 1000))
-    shrink (D d) = map D (shrink d)
+instance Arbitrary Day where arbitrary = maxMag 1000
 instance Show Day where show (D d) = printf "%02d" d
 instance Ranged Day (Year:/:Month) where
     start (_:/:m) = if m == 0 then 0 else 1
