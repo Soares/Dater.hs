@@ -13,6 +13,7 @@ Cabal-Version: >=1.9.2
 Test-Suite test-dater
   type: exitcode-stdio-1.0
   main-is: Main.hs
+  Ghc-Options: -O2 -Wall
   build-depends:
     Cabal >= 1.9.2,
     QuickCheck >= 2.4,
@@ -23,7 +24,7 @@ Test-Suite test-dater
     template-haskell >= 2 && < 3,
     random >= 1.0,
     base >= 4 && < 5
-  Hs-Source-Dirs: src, test, systems
+  Hs-Source-Dirs: src, systems, test
 
 Library
   Build-Depends:
@@ -33,8 +34,8 @@ Library
     QuickCheck >= 2.4,
     random >= 1.0,
     base >= 4 && < 5
-  Ghc-Options:   -O2 -Wall
-  Hs-Source-Dirs:  src, systems
+  Ghc-Options: -O2 -Wall
+  Hs-Source-Dirs: src, systems
   Exposed-Modules:
     Data.Coded,
     Data.DateTime,
