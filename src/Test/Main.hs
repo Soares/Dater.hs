@@ -12,7 +12,8 @@ import Test.Data.DateTime.VarPart
 import Test.Data.Naturals
 import Test.Data.Zeroed
 
-import Data.DateTime.Gregorian
+import qualified Data.DateTime.Gregorian as Gregorian
+import qualified Data.DateTime.Kaol as Kaol
 import Data.Naturals
 import Data.Normalize
 
@@ -21,8 +22,10 @@ main = defaultMain tests
 
 tests :: [Test]
 tests =
-    [ testGroup "YMD" [testVarPart (undefined::YMD)]
-    , testGroup "HMS" [testConstPart (undefined::HMS)]
+    [ testGroup "Gregorian YMD" [testVarPart (undefined::Gregorian.YMD)]
+    , testGroup "Gregorian HMS" [testConstPart (undefined::Gregorian.HMS)]
+    , testGroup "Kaol YMD" [testVarPart (undefined::Kaol.YMD)]
+    , testGroup "Kaol HMS" [testConstPart (undefined::Kaol.HMS)]
     , testNaturals
     , testZeroed
     ]
