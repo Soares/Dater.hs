@@ -3,17 +3,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE TypeFamilies #-}
-module Text.Chunk where
+module Text.Format.Options where
 import Data.Char
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-data Style
-    = Number
-    | Name
-    | Abbreviation Int
-    | Qualifier
-    deriving (Eq, Ord, Read, Show)
+-- Alternate, Casing, Padding, Width
+type Options = (Int, Casing, Char, Int)
+defaults = (0, Normal, '0', 0)
 
 data Casing
     = Normal
@@ -23,11 +20,19 @@ data Casing
     deriving (Eq, Ord, Enum, Read, Show)
 
 data Chunk = Chunk
-    { style   :: Style
-    , width   :: Int
-    , padding :: Char
-    , casing  :: Casing
+    { alternate :: Int
+    , width     :: Int
+    , padding   :: Char
+    , casing    :: Casing
     }
+
+defaultChunk :: Chunk
+defaultChunk = Chunk
+  { alternate = 0
+  , width = 0
+  , padding = '0'
+  , casing = Normal
+  }
 
 {-
 
