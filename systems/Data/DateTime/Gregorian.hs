@@ -42,19 +42,25 @@ instance Show Month where show (M m) = printf "%02d" m
 instance Ranged Month Year where range = const (1, 12)
 instance Displayable Month where
     number = toInteger
-    name 1 = "January"
-    name 2 = "February"
-    name 3 = "March"
-    name 4 = "April"
-    name 5 = "May"
-    name 6 = "June"
-    name 7 = "July"
-    name 8 = "August"
-    name 9 = "September"
-    name 10 = "October"
-    name 11 = "November"
-    name 12 = "December"
-    name n = if n == 0 then name (12::Month) else name (n `mod` 12)
+    name n = months !! fromIntegral m where m = ((n `mod` 12) - 1) `mod` 13
+instance Loadable Month where
+    names = zip [1..] months
+months :: [String]
+months =
+    [ "January"
+    , "February"
+    , "March"
+    , "April"
+    , "May"
+    , "June"
+    , "July"
+    , "August"
+    , "September"
+    , "October"
+    , "November"
+    , "December"
+    ]
+
 
 
 newtype Day = D Int deriving
@@ -73,10 +79,25 @@ instance Show Hour where show (H h) = printf "%02d" h
 instance Relable Hour where type Relative Hour = Maybe Hour
 instance Displayable Hour where
     number = toInteger
-    name n = from (normal n `mod` 12) where
-        from x = show $ if x == 0 then 12 else x
+    qualify "am" 12 = 0
+    qualify "pm" n | h < 12 = h + 12 where h = normal n
+    qualify _ n = n
+    name = show . adjust . (`mod` 12) . normal
+        where adjust n = if n == 0 then 12 else n
+instance Loadable Hour where qualifiers _ = ["am", "pm"]
 
 
 type YMD = Year :/: Month :/: Day
 type HMS = N24  ::: N60   ::: N60
 type Gregorian = DateTime YMD HMS
+
+
+instance Formatter Gregorian Standard where
+    -- load :: Map (Target Standard) Integer -> Gregorian
+    loader _ Standard.Year = undefined :: Year
+    loader _ Standard.Month = undefined :: Month
+    loader _ Standard.Day = undefined :: Day
+    loader _ Standard.Hour = undefined :: Hour
+    loader _ Standard.Minute = undefined :: N60
+    loader _ Standard.Second = undefined :: N60
+    loader _ _ = undefined :: Integer
