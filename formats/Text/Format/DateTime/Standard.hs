@@ -23,9 +23,9 @@ data Standard
 
 instance Format Standard where
     table = Map.fromList
-        [ ('a', Directive WeekDay (Abbreviation 3))
+        [ ('a', shortcut "%:A")
         , ('A', Directive WeekDay Name)
-        , ('b', Directive Month (Abbreviation 3))
+        , ('b', shortcut "%:B")
         , ('B', Directive Month Name)
         , ('c', shortcut "%a %b %-d, %T %Y")
         , ('C', Directive Century Number)
@@ -39,8 +39,7 @@ instance Format Standard where
         , ('G', shortcut "%~Y")
         , ('h', shortcut "%b")
         , ('H', Directive Hour Number)
-        , ('i', Directive Hour (Abbreviation 3))
-        , ('I', Directive Hour Name)
+        , ('I', shortcut "%:H")
         , ('j', Directive Date Number)
         , ('m', Directive Month Number)
         , ('k', shortcut "%_H")
@@ -60,7 +59,7 @@ instance Format Standard where
         , ('w', Directive WeekDay Number)
         , ('W', Directive Week Number)
         , ('X', shortcut "%H:%M")
-        , ('y', Directive Year (Abbreviation 2))
+        , ('y', shortcut "%:Y")
         , ('Y', Directive Year Number)
         , ('z', Directive TimeZone Number)
         , ('Z', Directive TimeZone Name)

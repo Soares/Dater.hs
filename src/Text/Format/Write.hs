@@ -6,9 +6,16 @@
 module Text.Format.Write where
 import Control.Applicative
 import Data.Char
-import Text.Format.Table
 import Text.Format.Parse (loadFormat)
 import Text.ParserCombinators.Parsec (ParseError)
+import Text.Format.Table
+    ( Style(..)
+    , Casing(..)
+    , Padding(..)
+    , Format(..)
+    , Section(..)
+    , Spec
+    )
 
 data OutSection = forall x. Formattable x => Out x
 
@@ -21,52 +28,66 @@ writeSections :: forall f x. (Format f, Formatter x f) => x -> Spec f -> String
 writeSections x = concatMap toStr where
     toStr :: Either (Section f) String -> String
     toStr (Right s) = s
-    toStr (Left sec) = format cas pad dig str where
-        Section tgt sty opt = sec
-        Options pad cas alt = opt
-        elm = formattable x tgt alt
+    toStr (Left sec) = format c p dig str where
+        Section tgt sty p c alt = sec
+        elm = formattable x tgt
         dig = width elm
-        str = render sty elm
+        str = render sty alt elm
 
-render :: Style -> OutSection -> String
-render Name = name
-render Number = show . number
-render (Abbreviation i) = abbreviation i
+force :: Int -> a -> [a] -> a
+force _ a [] = a
+force 0 _ (x:_) = x
+force i a (_:xs) = force (pred i) a xs
 
-format :: Casing -> (Char, Int) -> Int -> String -> String
-format Normal (_, 0) _ str = str
-format Normal (_, 1) 0 str = str
-format Normal (c, 1) d str = replicate (d - length str) c ++ str
-format Normal (c, n) _ str = replicate (n - length str) c ++ str
+render :: Style -> Int -> OutSection -> String
+render Name i o = force i (name o) (names o)
+render Number i o = force i (show $ number o) (numbers o)
+
+format :: Casing -> Padding -> Int -> String -> String
+format Normal None _ str = str
+format Normal (Yours _) 0 str = str
+format Normal (Yours c) w str = pad c w str
+format Normal (Exactly c w) _ str = pad c w str
 format Upper p d s = map toUpper $ format Normal p d s
 format Lower p d s = map toLower $ format Normal p d s
 format Inverted p d s = map invert $ format Normal p d s
     where invert c = if isUpper c then toLower c else toUpper c
 
+pad :: Char -> Int -> String -> String
+pad c w "" = replicate w c
+pad c w str@(x:xs)
+    | w <= 1 = str
+    | x `elem` "+-±" = x : pad c (w-1) xs
+    | otherwise = replicate (w - length str) c ++ str
+
 class Formatter x f where
-    formattable :: x -> f -> Int -> OutSection
+    formattable :: x -> f -> OutSection
 
 class Formattable x where
     number :: x -> Integer
-    -- TODO: Turn on representation
-    representation :: Int -> x -> String
-    representation _ = show . number
+    number = read . (!! 0) . numbers
+    numbers :: x -> [String]
+    numbers = pure . show . number
     name :: x -> String
-    name = show . number
-    abbreviation :: Int -> x -> String
-    abbreviation 0 = name
-    abbreviation i = take i . name
+    name = (!! 0) . names
+    names :: x -> [String]
+    names = pure . name
     width :: x -> Int
     width = const 0
 
 instance Formattable OutSection where
     name (Out s) = name s
+    names (Out s) = names s
     number (Out s) = number s
-    abbreviation i (Out s) = abbreviation i s
+    numbers (Out s) = numbers s
     width (Out s) = width s
 
-instance Formattable Integer where number = id
-instance Formattable Int where number = toInteger
+instance Formattable Integer where
+    number = id
+    name = show . number
+instance Formattable Int where
+    number = toInteger
+    name = show . number
 instance Formattable (Integer, String) where
     number = fst
     name = snd

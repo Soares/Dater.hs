@@ -39,26 +39,28 @@ directive = letter >>= \c ->
     in maybe die pure $ Map.lookup c table
 
 data Option
-    = Padding Char Int
-    | Case Casing
-    | Alternate Int
+    = P Char Int
+    | C Casing
+    | A Int
     deriving (Eq, Read, Show)
 
 opts :: Parser Options
 opts = foldr reduce defaults <$> many opt where
-    reduce (Padding c w) o = o{padding=(c, w)}
-    reduce (Case c) o = o{casing=c}
-    reduce (Alternate i) o = o{alternate=i}
+    reduce (P _ 0) o = o{pad=Just None}
+    reduce (P c 1) o = o{pad=Just (Yours c)}
+    reduce (P c w) o = o{pad=Just (Exactly c w)}
+    reduce (C c) o = o{txt=Just c}
+    reduce (A i) o = o{alt=Just i}
 
 opt :: Parser Option
 opt =
-    try (char '-' *> pure (Padding '0' 0))
-    <|> try (Padding ' ' <$> padCount '_')
-    <|> try (Padding '0' <$> padCount '0')
-    <|> try (char '^' *> pure (Case Upper))
-    <|> try (char '&' *> pure (Case Lower))
-    <|> try (char '#' *> pure (Case Inverted))
-    <|> (Alternate <$> altCount)
+    try (char '-' *> pure (P undefined 0))
+    <|> try (P ' ' <$> padCount '_')
+    <|> try (P '0' <$> padCount '0')
+    <|> try (char '^' *> pure (C Upper))
+    <|> try (char '&' *> pure (C Lower))
+    <|> try (char '#' *> pure (C Inverted))
+    <|> (A <$> altCount)
     <?> "a chunk option"
 
 altCount :: Parser Int

@@ -45,10 +45,13 @@ instance Show Month where show (M m) = printf "%02d" m
 instance Ranged Month Year where range = const (1, 12)
 instance Formattable Month where
     number = toInteger
-    name n = months !! (fromIntegral m - 1) where
-        m = if n `mod` 12 == 0 then 12 else n `mod` 12
+    names m = [str, take 3 str] where
+        str = months !! (fromIntegral i - 1)
+        i = if m `mod` 12 == 0 then 12 else m `mod` 12
+{-
 instance Loadable Month where
     names = const $ zip [1..] months
+    -}
 months :: [String]
 months = ["January", "February", "March", "April", "May", "June", "July",
     "August", "September", "October", "November", "December" ]
@@ -86,24 +89,24 @@ type HMS = Hour ::: N60   ::: N60
 type Gregorian = DateTime YMD HMS TimeZone
 
 instance Formatter Gregorian Standard where
-    formattable g Standard.DateTime _ = Out g
-    formattable g Standard.Date _ = Out $ day g
-    formattable g Standard.Time _ = Out $ time g
-    formattable g Standard.TimeZone _ = Out $ zone g
-    formattable g Standard.Century _ = Out $ y `mod` 100 where
+    formattable g Standard.DateTime = Out g
+    formattable g Standard.Date = Out $ day g
+    formattable g Standard.Time = Out $ time g
+    formattable g Standard.TimeZone = Out $ zone g
+    formattable g Standard.Century = Out $ y `div` 100 where
         (y:/:_:/:_) = day g
-    formattable g Standard.Year _ = let (y:/:_:/:_) = day g in Out y
-    formattable g Standard.Month _ = let (_:/:m:/:_) = day g in Out m
-    formattable g Standard.MonthDay _ = let (_:/:_:/:d) = day g in Out d
-    formattable g Standard.Week _ = undefined --TODO
-    formattable g Standard.WeekDay _ = undefined --TODO
-    formattable g Standard.Hour _ = let (h:::_:::_) = time g in Out h
-    formattable g Standard.Meridium _ = Out m where
+    formattable g Standard.Year = let (y:/:_:/:_) = day g in Out y
+    formattable g Standard.Month = let (_:/:m:/:_) = day g in Out m
+    formattable g Standard.MonthDay = let (_:/:_:/:d) = day g in Out d
+    formattable g Standard.Week = undefined --TODO
+    formattable g Standard.WeekDay = undefined --TODO
+    formattable g Standard.Hour = let (h:::_:::_) = time g in Out h
+    formattable g Standard.Meridium = Out m where
         m = if h >= 12 then "pm" else "am"
         (h:::_:::_) = time g
-    formattable g Standard.Minute _ = let (_:::m:::_) = time g in Out m
-    formattable g Standard.Second _ = let (_:::_:::s) = time g in Out s
-    formattable g Standard.Fraction _ = Out (i :: Integer, s :: String) where
+    formattable g Standard.Minute = let (_:::m:::_) = time g in Out m
+    formattable g Standard.Second = let (_:::_:::s) = time g in Out s
+    formattable g Standard.Fraction = Out (i :: Integer, s :: String) where
         x = extra g
         i = floor $ x * 10 ^ (9::Int)
         s = printf "%d/%d" (numerator x) (denominator x)
