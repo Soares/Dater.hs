@@ -27,25 +27,25 @@ data Casing
 
 data Directive f
     = Directive f Style
-    | Shortcut [Either (Options, Directive f) String]
+    | Shortcut [Either (Section f) String]
 
 data Options = Options
     { padding   :: (Char, Int)
     , casing    :: Casing
     , alternate :: Int
-    }
+    } deriving (Eq, Read, Show)
 
 data Section f = Section
-    { target  :: Format f => f
+    { target  :: f
     , style   :: Style
     , options :: Options
-    }
+    } deriving (Eq, Read, Show)
 
-class Format f where
+class (Eq f, Ord f) => Format f where
     table :: Map Char (Directive f)
 
 defaults :: Options
-defaults = Options ('0', 0) Normal 0
+defaults = Options ('0', 1) Normal 0
 
 flatten :: [Either (Options, Directive f) String] -> [Either (Section f) String]
 flatten [] = []
@@ -53,6 +53,6 @@ flatten (Right x : xs) = Right x : flatten xs
 flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
     reduce :: Options -> Directive f -> [Either (Section f) String]
     reduce o (Directive f y) = [Left $ Section f y o]
-    reduce o (Shortcut ds) = map (update o) (flatten ds)
+    reduce o (Shortcut secs) = map (update o) secs
     update o (Left sec) = Left sec{options=o}
     update _ str = str
