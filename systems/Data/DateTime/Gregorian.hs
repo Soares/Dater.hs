@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.DateTime.Gregorian where
 import Data.DateTime
+import Data.DateTime.Gregorian.TimeZones
 import Data.Ratio (numerator, denominator)
 import Data.Modable
 import Data.Naturals
@@ -66,7 +67,7 @@ instance Ranged Day (Year:/:Month) where
 
 newtype Hour = H N24 deriving
     ( Eq, Ord, Num, Real, Enum, Integral
-    , Bounded, Normalize, Modable, Formattable)
+    , Bounded, Normalize, Modable, Formattable, Arbitrary)
 instance Show Hour where show (H h) = printf "%02d" h
 instance Relable Hour where type Relative Hour = Maybe Hour
 {-
@@ -80,24 +81,26 @@ instance Formattable Hour where
 instance Loadable Hour where qualifiers _ = ["am", "pm"]
 -}
 
-
 type YMD = Year :/: Month :/: Day
 type HMS = Hour ::: N60   ::: N60
-type Gregorian = DateTime YMD HMS
+type Gregorian = DateTime YMD HMS TimeZone
 
 instance Formatter Gregorian Standard where
-    formattable g Standard.DateTime _ = undefined -- TODO
-    formattable g Standard.Date _ = undefined -- TODO
-    formattable g Standard.Time _ = undefined -- TODO
-    formattable g Standard.TimeZone _ = undefined -- TODO
-    formattable g Standard.Century _ = undefined -- TODO
+    formattable g Standard.DateTime _ = Out g
+    formattable g Standard.Date _ = Out $ day g
+    formattable g Standard.Time _ = Out $ time g
+    formattable g Standard.TimeZone _ = Out $ zone g
+    formattable g Standard.Century _ = Out $ y `mod` 100 where
+        (y:/:_:/:_) = day g
     formattable g Standard.Year _ = let (y:/:_:/:_) = day g in Out y
     formattable g Standard.Month _ = let (_:/:m:/:_) = day g in Out m
     formattable g Standard.MonthDay _ = let (_:/:_:/:d) = day g in Out d
     formattable g Standard.Week _ = undefined --TODO
     formattable g Standard.WeekDay _ = undefined --TODO
     formattable g Standard.Hour _ = let (h:::_:::_) = time g in Out h
-    formattable g Standard.Meridium _ = undefined -- TODO
+    formattable g Standard.Meridium _ = Out m where
+        m = if h >= 12 then "pm" else "am"
+        (h:::_:::_) = time g
     formattable g Standard.Minute _ = let (_:::m:::_) = time g in Out m
     formattable g Standard.Second _ = let (_:::_:::s) = time g in Out s
     formattable g Standard.Fraction _ = Out (i :: Integer, s :: String) where

@@ -11,6 +11,7 @@ import Data.Pair
 import Data.Ranged
 import Data.Zeroed
 import Test.QuickCheck.Arbitrary
+import Text.Format.Write
 
 -- | A simple combinator, intended for combining types into a date type
 data a :/: b = a :/: b
@@ -87,6 +88,10 @@ instance (Zeroed a, Composable a b) => Coded (a:/:b) where
     encode = (size <$> left <*> right) . normal
     decode = fromTuple . (id **^ elemify) . split
         where (**^) f g (a, b) = (f a, g a b)
+
+-- | When asked to be formatted, give the number of days since 0
+instance (Zeroed a, Composable a b) => Formattable (a:/:b) where
+    number = encode
 
 -- | Allows QuickCheck testing
 instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where

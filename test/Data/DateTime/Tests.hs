@@ -38,10 +38,11 @@ testTime t = testGroup "time composition"
         in (p + fromIntegral y) == fromIntegral x)
     ]
 
-testDateTime :: forall d t r s.
+testDateTime :: forall d t z r s.
     ( DateLike d, Behaved d r
     , TimeLike t, Behaved t s
-    ) => DateTime d t -> Test
+    , ZoneLike z
+    ) => DateTime d t z -> Test
 testDateTime _ = testGroup "DateTime"
     [ testDate (undefined::d)
     , testTime (undefined::t)

@@ -48,9 +48,13 @@ class Formatter x f where
 
 class Formattable x where
     number :: x -> Integer
+    -- TODO: Turn on representation
+    representation :: Int -> x -> String
+    representation _ = show . number
     name :: x -> String
     name = show . number
     abbreviation :: Int -> x -> String
+    abbreviation 0 = name
     abbreviation i = take i . name
     width :: x -> Int
     width = const 0

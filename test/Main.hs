@@ -15,7 +15,8 @@ main = defaultMain tests
 tests :: [Test]
 tests =
     [ testGroup "Gregorian" [testDateTime  (undefined::Gregorian)]
-    , testGroup "Kaol" [testDateTime (undefined::Kaol)]
+    -- , testGroup "Kaol" [testDateTime (undefined::Kaol)]
+    -- TODO: Turn Kaol back on
     , testNaturals
     , testPairs
     , testZeroed

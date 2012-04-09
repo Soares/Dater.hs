@@ -11,6 +11,7 @@ import Data.Coded
 import Data.Normalize
 import Data.Pair
 import Test.QuickCheck.Arbitrary
+import Text.Format.Write
 
 -- | A simple combinator, inteded for combining types into a time type.
 data a ::: b = a ::: b
@@ -104,6 +105,10 @@ instance (Integral a, Integral b, Bounded b) => Coded (a:::b) where
         where size = toInteger (range :: b)
     decode = fromTuple . (fromInteger *** fromInteger) . (`quotRem` size)
         where size = toInteger (range :: b)
+
+-- | When asked to be formatted, give the number of seconds since 0
+instance (Integral a, Integral b, Bounded b) => Formattable (a:::b) where
+    number = encode
 
 -- | The range within the boundaries of a bounded number
 range :: forall t. (Bounded t, Num t, Enum t) => t

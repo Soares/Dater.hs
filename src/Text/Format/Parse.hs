@@ -3,6 +3,7 @@ import Control.Applicative
 import qualified Data.Map as Map
 import Text.Format.Table
 import Text.ParserCombinators.Parsec hiding ((<|>), many)
+-- TODO: options need to be mabified or shortcuts won't work.
 
 loadFormat :: Format f
     => String -> Either ParseError [Either (Section f) String]
