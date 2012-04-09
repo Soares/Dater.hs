@@ -8,6 +8,7 @@ import Data.Char
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+-- TODO: Kill this
 -- Alternate, Casing, Padding, Width
 type Options = (Int, Casing, Char, Int)
 defaults = (0, Normal, '0', 0)
