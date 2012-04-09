@@ -15,7 +15,7 @@ writeFormat x = concatMap toStr where
     toStr (Left sec) = format cas pad dig str where
         Section tgt sty opt = sec
         Options pad cas alt = opt
-        elm = section x tgt alt
+        elm = formattable x tgt alt
         dig = digits elm
         str = render sty elm
 
@@ -35,7 +35,7 @@ format Inverted p d s = map invert $ format Normal p d s
     where invert c = if isUpper c then toLower c else toUpper c
 
 class Formatter x f where
-    section :: x -> f -> Int -> OutSection
+    formattable :: x -> f -> Int -> OutSection
 
 class Formattable x where
     number :: x -> Integer
