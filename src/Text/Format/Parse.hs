@@ -12,8 +12,9 @@ parseFormat :: Format f => Parser [Either (Section f) String]
 parseFormat = flatten <$> many1 section
 
 shortcut :: Format f => String -> Directive f
-shortcut str = let Right res = parse parseFormat "shortcut" str
-    in Shortcut res
+shortcut str = case parse parseFormat "shortcut" str of
+    Right res -> Shortcut res
+    Left err -> error $ show err
 
 section :: Format f => Parser (Either (Options, Directive f) String)
 section =
@@ -38,7 +39,6 @@ directive = letter >>= \c ->
 
 data Option
     = Padding Char Int
-    | NoPadding
     | Case Casing
     | Alternate Int
     deriving (Eq, Read, Show)

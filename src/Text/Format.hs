@@ -3,16 +3,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Text.Format
-    ( OutSection
+    ( OutSection(..)
     , Formatter(..)
     , Formattable(..)
     , writeFormat
     , writeSections
-    , InSection
+    , InSection(..)
     , Loader(..)
     , Loadable(..)
     , readFormat
     , readSections
+    , Style(..)
     ) where
 import Text.Format.Write
 import Text.Format.Read
+import Text.Format.Table

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -10,13 +11,23 @@ import Text.Format.Parse (loadFormat)
 import Control.Monad (void)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Text.ParserCombinators.Parsec hiding ((<|>), many)
+import Text.ParserCombinators.Parsec
+    ( Parser
+    , ParseError
+    , char
+    , digit
+    , string
+    , try
+    , many1
+    , count
+    , choice
+    )
 
 data InSection = forall x. Loadable x => In x
 
 readFormat :: forall f x. (Format f, Loader x f)
-    => f -> String -> x -> Either ParseError (Parser x)
-readFormat f str x = readSections <$> parsed where
+    => f -> String -> Either ParseError (Parser x)
+readFormat _ str = readSections <$> parsed where
     parsed = loadFormat str :: Either ParseError (Spec f)
 
 readSections :: forall f x. (Format f, Loader x f) => Spec f -> Parser x
@@ -52,7 +63,7 @@ numberParser True d p =
     try (char '+' *> numberParser False d p)
     <|> try (char '-' *> (negate <$> numberParser False d p))
     <|> numberParser False d p
-numberParser False _ (c, 0) = read <$> many1 digit
+numberParser False _ (_, 0) = read <$> many1 digit
 numberParser False d (c, 1) = read <$> paddedDigits c d
 numberParser False _ (c, w) = read <$> paddedDigits c w
 
@@ -64,7 +75,7 @@ paddedDigits c w
         | x <- [0..w-1] ]
 
 lefts :: [Either a b] -> [a]
-lefts (Right b : xs) = lefts xs
+lefts (Right _ : xs) = lefts xs
 lefts (Left a : xs) = a : lefts xs
 lefts [] = []
 
@@ -73,7 +84,6 @@ class Loader x f where
     loadable :: x -> f -> Int -> InSection
 
 class Loadable x where
-    load :: Integer -> x
     names :: x -> [(Integer, String)]
     names = const []
     abbreviations :: Int -> x -> [(Integer, String)]
@@ -84,11 +94,11 @@ class Loadable x where
     signed = const False
 
 instance Loadable InSection where
-    load = In
     names (In s) = names s
     abbreviations i (In s) = abbreviations i s
     digits (In s) = digits s
     signed (In s) = signed s
 
-instance Loadable Integer where load = id
-instance Loadable Int where load = fromInteger
+instance Loadable [(Integer, String)] where names = id
+instance Loadable Integer
+instance Loadable Int

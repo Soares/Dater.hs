@@ -11,7 +11,6 @@ module Text.Format.Table
     , flatten
     ) where
 import Data.Map (Map)
-import qualified Data.Map as Map
 
 type Spec f = [Either (Section f) String]
 
@@ -55,7 +54,7 @@ flatten [] = []
 flatten (Right x : xs) = Right x : flatten xs
 flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
     reduce :: Options -> Directive f -> Spec f
-    reduce o (Directive f y) = [Left $ Section f y o]
-    reduce o (Shortcut secs) = map (update o) secs
-    update o (Left sec) = Left sec{options=o}
+    reduce opts (Directive f y) = [Left $ Section f y opts]
+    reduce opts (Shortcut secs) = map (update opts) secs
+    update opts (Left sec) = Left sec{options=opts}
     update _ str = str

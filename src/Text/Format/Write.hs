@@ -1,5 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Text.Format.Write where
 import Control.Applicative
@@ -12,7 +14,7 @@ data OutSection = forall x. Formattable x => Out x
 
 writeFormat :: forall f x. (Format f, Formatter x f)
     => f -> String -> x -> Either ParseError String
-writeFormat f str x = writeSections x <$> parsed where
+writeFormat _ str x = writeSections x <$> parsed where
     parsed = loadFormat str :: Either ParseError (Spec f)
 
 writeSections :: forall f x. (Format f, Formatter x f) => x -> Spec f -> String
@@ -33,7 +35,7 @@ render (Abbreviation i) = abbreviation i
 
 format :: Casing -> (Char, Int) -> Int -> String -> String
 format Normal (_, 0) _ str = str
-format Normal (c, 1) 0 str = str
+format Normal (_, 1) 0 str = str
 format Normal (c, 1) d str = replicate (d - length str) c ++ str
 format Normal (c, n) _ str = replicate (n - length str) c ++ str
 format Upper p d s = map toUpper $ format Normal p d s
@@ -61,3 +63,9 @@ instance Formattable OutSection where
 
 instance Formattable Integer where number = id
 instance Formattable Int where number = toInteger
+instance Formattable (Integer, String) where
+    number = fst
+    name = snd
+instance Formattable String where
+    number s = error $ "can't write string \""++s++"\" to number"
+    name = id

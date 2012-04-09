@@ -24,7 +24,7 @@ Test-Suite test-dater
     template-haskell >= 2 && < 3,
     random >= 1.0,
     base >= 4 && < 5
-  Hs-Source-Dirs: src, systems, test
+  Hs-Source-Dirs: src, systems, formats, test
 
 Library
   Build-Depends:
@@ -35,7 +35,7 @@ Library
     random >= 1.0,
     base >= 4 && < 5
   Ghc-Options: -O2 -Wall
-  Hs-Source-Dirs: src, systems
+  Hs-Source-Dirs: src, systems, formats
   Exposed-Modules:
     Data.Coded,
     Data.DateTime,
@@ -50,5 +50,9 @@ Library
     Data.Ranged,
     Data.Zeroed,
     Text.Format,
-    Text.Parse,
-    Text.Chunk
+    Text.Format.Read,
+    Text.Format.Write,
+    Text.Format.Parse,
+    Text.Format.Table,
+    Text.Format.DateTime.Standard,
+    Text.Parse
