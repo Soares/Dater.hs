@@ -1,4 +1,4 @@
-Things that our formatetr handles automatically:
+Things that our formatter handles automatically:
   flags:
     -    no padding
     _    pad with spaces
@@ -11,8 +11,9 @@ Things that our formatetr handles automatically:
     n    newline
     t    tab
 
-  formatter selection: (24hour/etc)
-    %1 - %999...
+  formatter selection: (Timezone format, etc.)
+    %:, %::, %:::
+    %:1, %:2, %:3, etc.
 
   alternate selection: (Week-based year, etc)
     %~1 - %~...
@@ -24,83 +25,72 @@ Things that our formatetr handles automatically:
 
   directives:
     rules:
-      yY/m/d for date
+      Y/m/d for date
       H:M:S:N/F for date
       ;/: for timezone
 
-    a = Sun = %1~b
-    A = Sunday = %1~B
-    b = Jan
-    B = January
+    a = Sun = %1~b                                              WeekDay, Abbreviation 3
+    A = Sunday = %1~B                                           WeekDay, Name
+    b = Jan                                                     Month, Abbreviation 3
+    B = January                                                 Month, Name
     c = {complete} = %a %b %-d, %T %Y
-    C = century
-    d = day of month
-    D = {date} = %d/%m/%Y
+    C = century                                                 Century, Number
+    d = day of month                                            MonthDay, Number
+    D = {date} = %d/%m/%Y                                       
     e = %_d
     E =
     f = {full year} = %Y-%m-%d
-    F = fraction (detail)
-    g = week year (2 digit)
-    G = week year (4 digit)
-    h =
-    H = hour
-    i = abbreviated hour name (not used in gregorian)
-    I = hour name (i.e. 12 hour)
-    j = day of year
+    F = fraction (detail)                                       Extra, Name
+    g = week year (2 digit)                                     ~Year, Abbreviation 2
+    G = week year (4 digit)                                     ~Year, Number
+    h = %b
+    H = hour                                                    Hour, Number
+    i = abbreviated hour name (not used in gregorian)           Hour, Abbreviation 3
+    I = hour name (i.e. 12 hour)                                Hour, Name
+    j = day of year                                             Date, Number
     J =
-    k =
-    K =
+    k = %_H
+    K = %_I
     l =
     L =
-    m = month
-    M = minute
+    m = month                                                   Month, Number
+    M = minute                                                  Minute, Number
     n -
-    N = nanoseconds
-    p = day qualifer (am/pm)
-    P =
+    N = nanoseconds                                             Extra, Number
+    o =
+    O =
+    p = day qualifer (am/pm)                                    Meridian, Number
+    P = %^p
     r = {long time} = %H:%M:%S.%N
     R = {full time} = %H:%M:%S.%F
-    s = seconds since zero
-    S = seconds
+    s = seconds since zero                                      DateTime, Number
+    S = seconds                                                 Time, Number
     t -
     T = {time} = %H:%M:%S
-    u = day of week
-    U = week in year
+    u = day of week                                             WeekDay, Number
+    U = week in year                                            Week, Number
     v =
-    V = Week number in week year
-    w = day of week
+    V = Week number in week year                                ~Week, Number
+    w = day of week                                             +WeekDay, Number
     W = week in year
     x =
     X = {short time} = %H:%M
-    y = year in century
-    Y = year
-    z = timezone abbreviation
-    Z = timezone full name
-    ; = timezone (±hhmm)
-    : = timezone ±hh:mm
-    :: = timezone ±hh:mm:ss
-    ::: = timezone auto-precision
+    y = year in century                                         Year, Abbreviation 2
+    Y = year                                                    Year, Number
+    z = timezone abbreviation                                   Timezone, Number
+    Z = timezone full name                                      Timezone, Name
 
-  To build a formatter, we need:
-    Integer -> (Year, Integer)
-    Year -> Integer -> Day
-    Year -> Integer -> Integer -> Time
-
-    Day -> Short
-    Weekday -> Long
-    Month -> Short
-    Month -> Long
-    YMD -> (Week, Year)
-    Hour -> Maybe Qualifier (am/pm)
-    Nanosecond cap
-    HMSX -> Timezone abbreviation
-
-Axed:
-  e - %_d
-  h - %b
-  k - %_H
-  l - %_I
-  P - %^p
+  Targets:
+    Century
+    Year
+    Month
+    MonthDay
+    Week
+    WeekDay
+    Hour
+    Meridium
+    Minute
+    Second
 
 
 How unix "date" works:

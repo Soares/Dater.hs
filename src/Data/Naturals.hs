@@ -15,6 +15,7 @@ import Data.Modable
 import Data.Normalize
 import Language.Haskell.TH hiding (Pred)
 import Test.QuickCheck.Arbitrary
+import Text.Format (Formattable(..))
 import Text.Parse
 import Text.ParserCombinators.Parsec (many1, digit)
 import Text.Printf
@@ -54,6 +55,10 @@ instance Natural n => Normalize (Succ n) where
         n = natural z
         x = z `mod` Z n
         o = fromIntegral z `div` fromIntegral n
+
+instance Natural n => Formattable (Succ n) where
+    name = show . normal
+    number = toInteger . normal
 
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y
