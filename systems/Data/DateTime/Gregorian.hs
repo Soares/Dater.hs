@@ -82,7 +82,7 @@ instance Loadable Hour where qualifiers _ = ["am", "pm"]
 
 
 type YMD = Year :/: Month :/: Day
-type HMS = N24  ::: N60   ::: N60
+type HMS = Hour ::: N60   ::: N60
 type Gregorian = DateTime YMD HMS
 
 instance Formatter Gregorian Standard where
