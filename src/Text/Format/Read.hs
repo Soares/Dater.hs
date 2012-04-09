@@ -6,6 +6,7 @@ import Control.Applicative
 import Control.Arrow
 import Data.Char
 import Text.Format.Table
+import Text.Format.Parse (loadFormat)
 import Control.Monad (void)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -14,8 +15,12 @@ import Text.ParserCombinators.Parsec hiding ((<|>), many)
 data InSection = forall x. Loadable x => In x
 
 readFormat :: forall f x. (Format f, Loader x f)
-    => [Either (Section f) String] -> Parser x
-readFormat spec = create <$> dict where
+    => f -> String -> x -> Either ParseError (Parser x)
+readFormat f str x = readSections <$> parsed where
+    parsed = loadFormat str :: Either ParseError (Spec f)
+
+readSections :: forall f x. (Format f, Loader x f) => Spec f -> Parser x
+readSections spec = create <$> dict where
     segments = mapM parseFrom spec
     dict = Map.fromList . lefts <$> segments
 

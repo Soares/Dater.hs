@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 module Text.Format.Table
-    ( Style(..)
+    ( Spec
+    , Style(..)
     , Casing(..)
     , Directive(..)
     , Options(..)
@@ -11,6 +12,8 @@ module Text.Format.Table
     ) where
 import Data.Map (Map)
 import qualified Data.Map as Map
+
+type Spec f = [Either (Section f) String]
 
 data Style
     = Number
@@ -27,7 +30,7 @@ data Casing
 
 data Directive f
     = Directive f Style
-    | Shortcut [Either (Section f) String]
+    | Shortcut (Spec f)
 
 data Options = Options
     { padding   :: (Char, Int)
@@ -47,11 +50,11 @@ class (Eq f, Ord f) => Format f where
 defaults :: Options
 defaults = Options ('0', 1) Normal 0
 
-flatten :: [Either (Options, Directive f) String] -> [Either (Section f) String]
+flatten :: [Either (Options, Directive f) String] -> Spec f
 flatten [] = []
 flatten (Right x : xs) = Right x : flatten xs
 flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
-    reduce :: Options -> Directive f -> [Either (Section f) String]
+    reduce :: Options -> Directive f -> Spec f
     reduce o (Directive f y) = [Left $ Section f y o]
     reduce o (Shortcut secs) = map (update o) secs
     update o (Left sec) = Left sec{options=o}

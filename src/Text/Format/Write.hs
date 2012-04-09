@@ -2,21 +2,28 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Text.Format.Write where
+import Control.Applicative
 import Data.Char
 import Text.Format.Table
+import Text.Format.Parse (loadFormat)
+import Text.ParserCombinators.Parsec (ParseError)
 
 data OutSection = forall x. Formattable x => Out x
 
 writeFormat :: forall f x. (Format f, Formatter x f)
-    => x -> [Either (Section f) String] -> String
-writeFormat x = concatMap toStr where
+    => f -> String -> x -> Either ParseError String
+writeFormat f str x = writeSections x <$> parsed where
+    parsed = loadFormat str :: Either ParseError (Spec f)
+
+writeSections :: forall f x. (Format f, Formatter x f) => x -> Spec f -> String
+writeSections x = concatMap toStr where
     toStr :: Either (Section f) String -> String
     toStr (Right s) = s
     toStr (Left sec) = format cas pad dig str where
         Section tgt sty opt = sec
         Options pad cas alt = opt
         elm = formattable x tgt alt
-        dig = digits elm
+        dig = width elm
         str = render sty elm
 
 render :: Style -> OutSection -> String
@@ -43,14 +50,14 @@ class Formattable x where
     name = show . number
     abbreviation :: Int -> x -> String
     abbreviation i = take i . name
-    digits :: x -> Int
-    digits = const 0
+    width :: x -> Int
+    width = const 0
 
 instance Formattable OutSection where
     name (Out s) = name s
     number (Out s) = number s
     abbreviation i (Out s) = abbreviation i s
-    digits (Out s) = digits s
+    width (Out s) = width s
 
 instance Formattable Integer where number = id
 instance Formattable Int where number = toInteger

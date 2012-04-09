@@ -4,6 +4,10 @@ import qualified Data.Map as Map
 import Text.Format.Table
 import Text.ParserCombinators.Parsec hiding ((<|>), many)
 
+loadFormat :: Format f
+    => String -> Either ParseError [Either (Section f) String]
+loadFormat = parse parseFormat "format"
+
 parseFormat :: Format f => Parser [Either (Section f) String]
 parseFormat = flatten <$> many1 section
 
