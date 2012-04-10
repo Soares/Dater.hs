@@ -13,7 +13,6 @@ module Data.DateTime
     , TimeLike
     , ZoneLike
     ) where
-import Control.Applicative
 import Data.Coded
 import Data.DateTime.ConstPart ((:::)(..))
 import Data.DateTime.VarPart ((:/:)(..))
@@ -61,7 +60,7 @@ type ZoneLike z =
     )
 
 data DateTime d t z = DateTime
-    { day      :: d
+    { date     :: d
     , time     :: t
     , extra    :: Rational
     , zone     :: z
@@ -98,10 +97,10 @@ instance DateTimeLike d t z => Normalize (DateTime d t z) where
         add 0 a = a
         add n a = if n > 0 then add (n-1) (succ a) else add (n+1) (pred a)
 
-instance DateTimeLike d t z => Formattable (DateTime d t z) where
-    numbers udt = pure . show $ let
+instance DateTimeLike d t z => WriteBlock (DateTime d t z) where
+    numerical udt = show $ let
         dt = normal udt
-        ymd = encode (day dt)
+        ymd = encode (date dt)
         hms = encode (time dt)
         size = toInteger (succ (maxBound - minBound) :: t)
         in (ymd*size)+hms

@@ -15,8 +15,7 @@ module Text.Format.Table
     , reoption
     , force
     ) where
-import Control.Applicative
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Map (Map)
 
 type Spec f = [Either (Section f) String]
@@ -103,8 +102,5 @@ flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
 -- | If the list is empty, falls back to a given default value.
 -- | TODO: probably should be in list utils somewhere.
 force :: a -> Int -> [a] -> a
-force a = (fromMaybe <$> fallback <*>) . atIndex where
-    atIndex _ [] = Nothing
-    atIndex 0 (x:_) = Just x
-    atIndex n (_:xs) = atIndex (pred n) xs
-    fallback = fromMaybe a . listToMaybe
+force a _ [] = a
+force _ i xs = (concat $ repeat xs) !! i

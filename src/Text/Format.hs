@@ -3,16 +3,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Text.Format
-    ( OutSection(..)
+    ( Writers(Write)
+    , WriteBlock(..)
+    , ParseBlock
     , Formatter(..)
-    , Formattable(..)
+    , Loader(..)
     , writeFormatIn
     , writeFormat
     , writeSpecIn
     , writeSpec
-    , InSection(..)
-    , Loader(..)
-    , Loadable(..)
     , readFormatIn
     , readFormat
     , readSpecIn

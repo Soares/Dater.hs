@@ -6,6 +6,7 @@ module Text.Format.Read
     , readFormatIn
     , readSpec
     , readSpecIn
+    , blockParser
     , naturalParser
     , signParser
     , signedParser
@@ -13,10 +14,14 @@ module Text.Format.Read
     , sizedNaturalParser
     , sizedSignedParser
     , stringParser
+    , disjointParser
+    , paddedStringParser
+    , padded
     , Loader(..)
+    , ParseBlock
+    , ReadBlock(..)
     ) where
 import Control.Applicative
-import Control.Arrow
 import Data.Char
 import Data.Locale
 import Text.Format.Table
@@ -60,9 +65,9 @@ nonNumerical = const $ fail "block can not be parsed numerically"
 
 -- | Utility to make a ParseBlock from a ReadBlock
 blockParser :: forall a. ReadBlock a => a -> ParseBlock
-blockParser _ = (fmap number . num, fmap number . txt) where
+blockParser _ = (fmap number . num, fmap number . text) where
     num = parseNumerical :: Padding -> Parser a
-    txt = parseTextual :: Casing -> Parser a
+    text = parseTextual :: Casing -> Parser a
 
 
 -- | Generate a parser according to a format string, without localization.
@@ -160,6 +165,12 @@ stringParser Upper = string . map toUpper
 stringParser Lower = string . map toLower
 stringParser Inverted = string . map invert
     where invert c = if isLower c then toUpper c else toLower c
+
+disjointParser ::
+    [Padding -> Parser Integer] ->
+    [Casing -> Parser Integer] ->
+    [ParseBlock]
+disjointParser a b = zip (cycle a) (cycle b)
 
 instance ReadBlock Integer where
     parseNumerical = naturalParser

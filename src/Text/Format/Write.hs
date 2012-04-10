@@ -1,21 +1,23 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Text.Format.Write
     ( Writers(..)
     , WriteBlock(..)
+    , disjointBlock
     , writeFormat
     , writeFormatIn
     , writeSpec
     , writeSpecIn
+    , out
     , Formatter(..)
     ) where
 import Control.Applicative
 import Data.Char
 import Data.Locale
-import Data.Maybe (fromMaybe, listToMaybe)
 import Text.Format.Parse (loadFormat)
 import Text.ParserCombinators.Parsec (ParseError)
 import Text.Format.Table
@@ -30,6 +32,9 @@ import Text.Format.Table
 
 
 data Writers = forall a. WriteBlock a => Write [a]
+
+out :: forall a. WriteBlock a => a -> Writers
+out = Write . pure
 
 class WriteBlock a where
     textual :: a -> String
@@ -89,6 +94,9 @@ pad c w str@(x:xs)
     | all isDigit (c:xs) = x : pad c (w-1) xs
     | otherwise = replicate (w - length str) c ++ str
 
+disjointBlock :: forall a b. WriteBlock (a, b) => [a] -> [b] -> Writers
+disjointBlock a b = Write $ zip (cycle a) (cycle b)
+
 class Formatter x f where
     formattable :: Maybe (Locale x) -> x -> f -> Writers
 
@@ -98,10 +106,17 @@ instance WriteBlock Integer where
 instance WriteBlock Int where
     numerical = show
 
+instance WriteBlock String where
+    textual = id
+
 instance WriteBlock (Int, String) where
     numerical = numerical . fst
     textual = snd
 
 instance WriteBlock (Integer, String) where
     numerical = numerical . fst
+    textual = snd
+
+instance WriteBlock (String, String) where
+    numerical = fst
     textual = snd

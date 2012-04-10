@@ -90,8 +90,8 @@ instance (Zeroed a, Composable a b) => Coded (a:/:b) where
         where (**^) f g (a, b) = (f a, g a b)
 
 -- | When asked to be formatted, give the number of days since 0
-instance (Zeroed a, Composable a b) => Formattable (a:/:b) where
-    numbers = pure . show . encode
+instance (Zeroed a, Composable a b) => WriteBlock (a:/:b) where
+    numerical = show . encode
 
 -- | Allows QuickCheck testing
 instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where

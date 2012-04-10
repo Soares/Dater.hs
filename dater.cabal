@@ -42,6 +42,10 @@ Library
     Data.DateTime.ConstPart,
     Data.DateTime.VarPart,
     Data.DateTime.Gregorian,
+    Data.DateTime.Gregorian.Date,
+    Data.DateTime.Gregorian.Time,
+    Data.DateTime.Gregorian.Places,
+    Data.DateTime.Gregorian.TimeZones,
     Data.DateTime.Kaol,
     Data.Locale
     Data.Modable,
@@ -51,9 +55,9 @@ Library
     Data.Ranged,
     Data.Zeroed,
     Text.Format,
+    Text.Format.Table,
     Text.Format.Read,
     Text.Format.Write,
     Text.Format.Parse,
-    Text.Format.Table,
     Text.Format.DateTime.Standard,
     Text.Parse

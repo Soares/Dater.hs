@@ -1,15 +1,23 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 module Data.DateTime.Gregorian.TimeZones
     ( TimeZone(..)
     , ShowStyle(..)
+    , Locale(..)
     , utcOffset
     , universal
     , showTimeZone
     , zoneNames
     , timeZones
+    , localTimeZoneParsers
+    , localTimeZoneStyles
+    , nonlocalTimeZoneParsers
+    , nonlocalTimeZoneStyles
     ) where
 import Control.Arrow
 import Control.Applicative
+import Data.DateTime.Gregorian.Places
+import Data.Locale
 import Data.Maybe (catMaybes)
 import Data.Function (on)
 import Data.Normalize
@@ -21,23 +29,9 @@ import Text.ParserCombinators.Parsec hiding ((<|>))
 
 -- TODO
 type Date = ()
+type Time = ()
 
-data Place
-    = Africa
-    | Antarctica
-    | Asia
-    | Atlantic
-    | Australia
-    | Caribbean
-    | CentralAmerica
-    | Everywhere
-    | Europe
-    | IndianOcean
-    | Military
-    | NorthAmerica
-    | Pacific
-    | SouthAmerica
-    deriving (Eq, Ord, Read, Show, Enum)
+data instance Locale TimeZone = At Place Date Time
 
 data ShowStyle
     = Numeric
@@ -85,35 +79,43 @@ instance Normalize TimeZone where
     normalize = overflow &&& const universal
     overflow = utcOffset
 
-instance Formattable TimeZone where
-    numbers tz = map (`showTimeZone` tz) [minBound..maxBound]
-    names tz = catMaybes [code tz, name tz, Just $ showTimeZone HourMinute tz]
+-- TODO: abstract similarities between local...
+nonlocalTimeZoneStyles :: TimeZone -> Writers
+nonlocalTimeZoneStyles tz = disjointBlock nums names where
+    nums = map (`showTimeZone` tz) [minBound..maxBound]
+    names = catMaybes [code tz, name tz, Just $ showTimeZone HourMinute tz]
 
-instance Formattable (TimeZone, Place, Date) where
-    numbers (tz, _, _) = map (`showTimeZone` tz) [minBound..maxBound]
-    names (tz, p, d) = flatten2 $ zoneNames tz p d
-
-instance Loadable TimeZone where
-    parseNumber _ i p = toDecimal <$> parseTimeZone (toEnum i) p
-    parseName tz _ _ = parseNumber tz 0 None
-
-instance Loadable (TimeZone, Place, Date) where
-    parseNumber _ i p = toDecimal <$> parseTimeZone (toEnum i) p
-    parseName x@(_, p, d) i c = force fb i $ map makeParser zs where
-        fb = parseNumber x 0 None
-        zs = concatMap flat $ timeZones p d
-        flat (tz, short, long) = [(short, tz), (long, tz)]
-        makeParser (n, tz) = try ((cased c n) *> pure (toDecimal tz))
-
-zoneNames :: TimeZone -> Place -> Date -> [(String, String)]
-zoneNames = undefined
-
-timeZones :: Place -> Date -> [(TimeZone, String, String)]
-timeZones = undefined
-
+-- TODO: move to list utils
 flatten2 :: [(a, a)] -> [a]
 flatten2 (x:xs) = fst x : snd x : flatten2 xs
 flatten2 [] = []
+
+localTimeZoneStyles :: Locale TimeZone -> TimeZone -> Writers
+localTimeZoneStyles loc tz = djb nums names where
+    djb = disjointBlock :: [String] -> [String] -> Writers
+    nums = map (`showTimeZone` tz) [minBound..maxBound]
+    names = flatten2 $ zoneNames loc tz :: [String]
+
+nonlocalTimeZoneParsers :: [ParseBlock]
+nonlocalTimeZoneParsers = zip ps (repeat err) where
+    ps = map p [minBound..maxBound]
+    p = (fmap toDecimal .) . parseTimeZone . toEnum
+    err _ = fail "time zone names can not be parsed without a locale"
+
+localTimeZoneParsers :: Locale TimeZone -> [ParseBlock]
+localTimeZoneParsers loc = disjointParser ps ns where
+    ps = map p [minBound..maxBound]
+    p = (fmap toDecimal .) . parseTimeZone . toEnum
+    zs = concatMap flat $ timeZones loc
+    flat (tz, short, long) = [(short, tz), (long, tz)]
+    makeParser (n, tz) c = try ((stringParser c n) *> pure (toDecimal tz))
+    ns = map makeParser zs
+
+zoneNames :: Locale TimeZone -> TimeZone -> [(String, String)]
+zoneNames = undefined
+
+timeZones :: Locale TimeZone -> [(TimeZone, String, String)]
+timeZones = undefined
 
 showTimeZone :: ShowStyle -> TimeZone -> String
 showTimeZone sty tz = let
@@ -121,14 +123,14 @@ showTimeZone sty tz = let
         EQ -> '±'
         LT -> '-'
         GT -> '+'
-    out = case sty of
+    fmt = case sty of
         Numeric -> printf "%c%02d%02d"
         HourMinute -> printf "%c%02d:%02d"
         HourMinuteSecond -> printf "%c%02d:%02d:00"
         Minimal -> if minute tz == 0
             then \a b _ -> printf "%c%02d" a b
             else printf "%c%02d:%02d"
-    in out s (hour tz) (minute tz)
+    in fmt s (hour tz) (minute tz)
 
 dropChunk :: Padding -> Padding
 dropChunk = decrease . decrease . decrease
