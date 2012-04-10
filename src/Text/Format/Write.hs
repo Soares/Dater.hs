@@ -4,15 +4,13 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Text.Format.Write
-    ( OutSection(Out, OutIn)
+    ( Writers(..)
+    , WriteBlock(..)
     , writeFormat
     , writeFormatIn
     , writeSpec
     , writeSpecIn
     , Formatter(..)
-    , Formattable(..)
-    , FormattableIn(..)
-    , force -- TODO: extract
     ) where
 import Control.Applicative
 import Data.Char
@@ -27,11 +25,19 @@ import Text.Format.Table
     , Format(..)
     , Section(..)
     , Spec
+    , force
     )
 
-data OutSection x
-    = forall a. Formattable a => Out a
-    | forall b. FormattableIn b x => OutIn b
+
+data Writers = forall a. WriteBlock a => Write [a]
+
+class WriteBlock a where
+    textual :: a -> String
+    textual = numerical
+    numerical :: a -> String
+    numerical = textual
+    width :: a -> Int
+    width = const 0
 
 writeFormat :: forall f x. (Format f, Formatter x f)
     => f -> String -> x
@@ -57,25 +63,14 @@ writeSpecIn loc x = concatMap toStr where
     toStr (Right s) = s
     toStr (Left sec) = format c p w str where
         Section tgt sty p c alt = sec
-        elm = formattable x tgt
-        w = force 0 alt $ case elm of
-            Out o -> widths o
-            OutIn o -> widthsIn loc o
-        str = render loc sty alt elm
+        elm = formattable loc x tgt
+        w = force 0 alt $ case elm of (Write o) -> map width o
+        str = render sty alt elm
 
-force :: a -> Int -> [a] -> a
-force a = (fromMaybe <$> fallback <*>) . atIndex where
-    atIndex _ [] = Nothing
-    atIndex 0 (x:_) = Just x
-    atIndex n (_:xs) = atIndex (pred n) xs
-    fallback = fromMaybe a . listToMaybe
-
-render :: forall x. Maybe (Locale x) -> Style -> Int -> OutSection x -> String
-render loc sty i sec = force "" i $ case (sty, sec) of
-    (Name, Out o) -> names o
-    (Number, Out o) -> numbers o
-    (Name, OutIn o) -> namesIn loc o
-    (Number, OutIn o) -> numbersIn loc o
+render :: Style -> Int -> Writers -> String
+render sty i sec = force "" i $ case (sty, sec) of
+    (Name, Write o) -> map textual o
+    (Number, Write o) -> map numerical o
 
 format :: Casing -> Padding -> Int -> String -> String
 format Normal None _ str = str
@@ -95,28 +90,18 @@ pad c w str@(x:xs)
     | otherwise = replicate (w - length str) c ++ str
 
 class Formatter x f where
-    formattable :: x -> f -> OutSection x
+    formattable :: Maybe (Locale x) -> x -> f -> Writers
 
-class Formattable x where
-    numbers :: x -> [String]
-    names :: x -> [String]
-    names = numbers
-    widths :: x -> [Int]
-    widths = const [0]
+instance WriteBlock Integer where
+    numerical = show
 
-class FormattableIn a x where
-    numbersIn :: Maybe (Locale x) -> a -> [String]
-    namesIn :: Maybe (Locale x) -> a -> [String]
-    widthsIn :: Maybe (Locale x) -> a -> [Int]
-    widthsIn = const $ const [0]
+instance WriteBlock Int where
+    numerical = show
 
-instance Formattable Integer where
-    numbers = pure . show
-instance Formattable Int where
-    numbers = pure . show
-instance Formattable (Integer, String) where
-    numbers = pure . show . fst
-    names = pure . snd
-instance Formattable String where
-    numbers = const []
-    names = pure
+instance WriteBlock (Int, String) where
+    numerical = numerical . fst
+    textual = snd
+
+instance WriteBlock (Integer, String) where
+    numerical = numerical . fst
+    textual = snd

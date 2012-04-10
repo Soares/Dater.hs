@@ -10,6 +10,7 @@ import Control.Arrow
 -- | but should rather simplfy it to it's most reduced form.
 class Normalize a where
     normalize :: a -> (Int, a)
+    normalize = overflow &&& normal
     normal :: a -> a
     normal = snd . normalize
     overflow :: a -> Int

@@ -13,8 +13,10 @@ module Text.Format.Table
     , decrease
     , derive
     , reoption
+    , force
     ) where
-import Data.Maybe (fromMaybe)
+import Control.Applicative
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Map (Map)
 
 type Spec f = [Either (Section f) String]
@@ -94,3 +96,15 @@ flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
         , alternate = fromMaybe (alternate sec) (alt opts)
         }
     update _ str = str
+
+-- | Helper function to select readers/writers, etc.
+-- | Attempts to find a value at a certain index in a list.
+-- | If the index is not present, falls back to the first element in the list.
+-- | If the list is empty, falls back to a given default value.
+-- | TODO: probably should be in list utils somewhere.
+force :: a -> Int -> [a] -> a
+force a = (fromMaybe <$> fallback <*>) . atIndex where
+    atIndex _ [] = Nothing
+    atIndex 0 (x:_) = Just x
+    atIndex n (_:xs) = atIndex (pred n) xs
+    fallback = fromMaybe a . listToMaybe
