@@ -43,6 +43,7 @@ Library
     Data.DateTime.VarPart,
     Data.DateTime.Gregorian,
     Data.DateTime.Kaol,
+    Data.Locale
     Data.Modable,
     Data.Naturals,
     Data.Normalize,

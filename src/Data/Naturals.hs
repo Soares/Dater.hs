@@ -57,8 +57,7 @@ instance Natural n => Normalize (Succ n) where
         o = fromIntegral z `div` fromIntegral n
 
 instance Natural n => Formattable (Succ n) where
-    name = show . normal
-    number = toInteger . normal
+    numbers = pure . show . normal
 
 instance Eq (Succ n) where
     (Z x) == (Z y) = x == y

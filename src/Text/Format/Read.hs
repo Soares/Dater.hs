@@ -2,9 +2,28 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Text.Format.Read where
+module Text.Format.Read
+    ( InSection(In, InIn)
+    , readFormat
+    , readFormatIn
+    , readSpec
+    , readSpecIn
+    , nameParser
+    , naturalParser
+    , signParser
+    , signedParser
+    , sizedParser
+    , sizedNaturalParser
+    , sizedSignedParser
+    , Loader(..)
+    , Loadable(..)
+    , LoadableIn(..)
+    , cased
+    ) where
 import Control.Applicative
 import Data.Char
+import Data.Locale
+-- TODO? import Data.Coded
 import Text.Format.Table
 import Text.Format.Parse (loadFormat)
 import Control.Monad (void)
@@ -23,28 +42,46 @@ import Text.ParserCombinators.Parsec
     , oneOf
     )
 
-data InSection = forall x. Loadable x => In x
+data InSection x
+    = forall a. Loadable a => In a
+    | forall b. LoadableIn b x => InIn b
 
 readFormat :: forall f x. (Format f, Loader x f)
     => f -> String -> Either ParseError (Parser x)
-readFormat _ str = readSections <$> parsed where
+readFormat = readFormatIn Nothing
+
+readFormatIn :: forall f x. (Format f, Loader x f)
+    => Maybe (Locale x)
+    -> f -> String
+    -> Either ParseError (Parser x)
+readFormatIn loc _ str = readSpecIn loc <$> parsed where
     parsed = loadFormat str :: Either ParseError (Spec f)
 
-readSections :: forall f x. (Format f, Loader x f) => Spec f -> Parser x
-readSections spec = create <$> dict where
+readSpec :: forall f x. (Format f, Loader x f) => Spec f -> Parser x
+readSpec = readSpecIn Nothing
+
+readSpecIn :: forall f x. (Format f, Loader x f)
+    => Maybe (Locale x) -> Spec f
+    -> Parser x
+readSpecIn loc spec = create <$> dict where
     segments = mapM parseFrom spec
     dict = Map.fromList . lefts <$> segments
-
     parseFrom :: Either (Section f) String -> Parser (Either (f, Integer) ())
     parseFrom (Right str) = Right <$> void (string str)
-    parseFrom (Left sec) = Left . (,) tgt <$> int where
+    parseFrom (Left sec) = Left . (,) tgt <$> get where
         Section tgt sty p c a = sec
         elm = loadable (undefined::x) tgt a
-        int = parseSec sty a elm p c
+        get = parseSec loc sty a elm p c
 
-parseSec :: Style -> Int -> InSection -> Padding -> Casing -> Parser Integer
-parseSec Name n sec _ c = parseName sec n c
-parseSec Number n sec p _ = parseNumber sec n p
+parseSec :: forall x. Maybe (Locale x)
+    -> Style -> Int -> InSection x
+    -> Padding -> Casing
+    -> Parser Integer
+parseSec loc sty n sec p c = case (sty, sec) of
+    (Name, In x) -> parseName x n c
+    (Name, InIn x) -> parseNameIn loc x n c
+    (Number, In x) -> parseNumber x n p
+    (Number, InIn x) -> parseNumberIn loc x n p
 
 nameParser :: [(Integer, String)] -> Casing -> Parser Integer
 nameParser ns c = choice $ map tupleParser ns
@@ -55,18 +92,16 @@ naturalParser (Exactly c w) = read <$> choice
     [ try (count x (char c) *> count (w-x) digit) | x <- [0..w-1] ]
 naturalParser _ = read <$> many1 digit
 
-sign :: Parser (Integer -> Integer)
-sign =
-    try (oneOf "±+" *> pure id)
-    <|> (char '-' *> pure negate)
+signParser :: Parser (Integer -> Integer)
+signParser = try (oneOf "±+" *> pure id) <|> (char '-' *> pure negate)
 
 signedParser :: Padding -> Parser Integer
 signedParser p@(Exactly c w)
-    | isDigit c = sign <*> naturalParser (decrease p)
-    | otherwise = choice
-        [ try (count x (char c) *> (sign <*> (read <$> count (w-x-1) digit)))
-        | x <- [0..w-2] ]
-signedParser p = sign <*> naturalParser p
+    | isDigit c = signParser <*> naturalParser (decrease p)
+    | otherwise = padded c w num where
+        num 1 = fail "not enough space for sign and digits"
+        num u = signParser <*> (read <$> count (u-1) digit)
+signedParser p = signParser <*> naturalParser p
 
 sizedParser :: (Padding -> Parser Integer) -> Int -> Padding -> Parser Integer
 sizedParser num w (Yours c) = num $ Exactly c w
@@ -78,12 +113,8 @@ sizedNaturalParser = sizedParser naturalParser
 sizedSignedParser :: Int -> Padding -> Parser Integer
 sizedSignedParser = sizedParser signedParser
 
-paddedDigits :: Char -> Int -> Parser String
-paddedDigits c w
-    | isDigit c = count w digit
-    | otherwise = choice
-        [ try (count x (char c) *> count (w-x) digit)
-        | x <- [0..w-1] ]
+padded :: Char -> Int -> (Int -> Parser a) -> Parser a
+padded c w p = choice [ try (count u (char c)) *> p (w-u) | u <- [0..w-1] ]
 
 lefts :: [Either a b] -> [a]
 lefts (Right _ : xs) = lefts xs
@@ -99,18 +130,19 @@ cased Inverted = string . map invert
 
 class Loader x f where
     create :: Map f Integer -> x
-    loadable :: x -> f -> Int -> InSection
+    loadable :: x -> f -> Int -> InSection x
 
--- TODO: Use encode/decode instead of sentinels
 class Loadable x where
     parseName :: x -> Int -> Casing -> Parser Integer
-    parseName = const $ const $ nameParser []
+    parseName = const . const $ nameParser []
     parseNumber :: x -> Int -> Padding -> Parser Integer
-    parseNumber = const $ const $ naturalParser
+    parseNumber = const . const $ naturalParser
 
-instance Loadable InSection where
-    parseName (In s) = parseName s
-    parseNumber (In s) = parseNumber s
+class LoadableIn a x where
+    parseNameIn :: Maybe (Locale x) -> a -> Int -> Casing -> Parser Integer
+    parseNameIn = const . const . const $ nameParser []
+    parseNumberIn :: Maybe (Locale x) -> a -> Int -> Padding -> Parser Integer
+    parseNumberIn = const . const . const $ naturalParser
 
 instance Loadable [(Integer, String)] where parseName x _ = nameParser x
 instance Loadable Integer

@@ -108,7 +108,7 @@ instance (Integral a, Integral b, Bounded b) => Coded (a:::b) where
 
 -- | When asked to be formatted, give the number of seconds since 0
 instance (Integral a, Integral b, Bounded b) => Formattable (a:::b) where
-    number = encode
+    numbers = pure . show . encode
 
 -- | The range within the boundaries of a bounded number
 range :: forall t. (Bounded t, Num t, Enum t) => t

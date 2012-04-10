@@ -91,7 +91,7 @@ instance (Zeroed a, Composable a b) => Coded (a:/:b) where
 
 -- | When asked to be formatted, give the number of days since 0
 instance (Zeroed a, Composable a b) => Formattable (a:/:b) where
-    number = encode
+    numbers = pure . show . encode
 
 -- | Allows QuickCheck testing
 instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where

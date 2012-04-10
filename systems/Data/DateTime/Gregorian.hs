@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 module Data.DateTime.Gregorian where
+import Control.Applicative
 import Data.DateTime
 import Data.DateTime.Gregorian.TimeZones
 import Data.Ratio (numerator, denominator)
@@ -44,7 +45,7 @@ instance Arbitrary Month where arbitrary = maxMag 1000
 instance Show Month where show (M m) = printf "%02d" m
 instance Ranged Month Year where range = const (1, 12)
 instance Formattable Month where
-    number = toInteger
+    numbers = pure . show . toInteger
     names m = [str, take 3 str] where
         str = months !! (fromIntegral i - 1)
         i = if m `mod` 12 == 0 then 12 else m `mod` 12

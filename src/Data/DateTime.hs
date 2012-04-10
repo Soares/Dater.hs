@@ -13,6 +13,7 @@ module Data.DateTime
     , TimeLike
     , ZoneLike
     ) where
+import Control.Applicative
 import Data.Coded
 import Data.DateTime.ConstPart ((:::)(..))
 import Data.DateTime.VarPart ((:/:)(..))
@@ -90,13 +91,15 @@ instance DateTimeLike d t z => Normalize (DateTime d t z) where
         excess = truncate x :: Integer
         x' = x - fromIntegral excess
         (offset, z') = normalize z
+        -- TODO: Remove integral dependency from Date
+        -- (or add Integral varPart)
         (o, t') = normalize (t + fromIntegral offset + fromIntegral excess)
         (p, d') = normalize (add o d)
         add 0 a = a
         add n a = if n > 0 then add (n-1) (succ a) else add (n+1) (pred a)
 
 instance DateTimeLike d t z => Formattable (DateTime d t z) where
-    number udt = let
+    numbers udt = pure . show $ let
         dt = normal udt
         ymd = encode (day dt)
         hms = encode (time dt)

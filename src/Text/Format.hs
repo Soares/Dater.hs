@@ -6,13 +6,17 @@ module Text.Format
     ( OutSection(..)
     , Formatter(..)
     , Formattable(..)
+    , writeFormatIn
     , writeFormat
-    , writeSections
+    , writeSpecIn
+    , writeSpec
     , InSection(..)
     , Loader(..)
     , Loadable(..)
+    , readFormatIn
     , readFormat
-    , readSections
+    , readSpecIn
+    , readSpec
     , Style(..)
     ) where
 import Text.Format.Write
