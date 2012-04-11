@@ -5,6 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.DateTime.VarPart ((:/:)(..), Composable, size, split) where
 import Control.Applicative
+import Control.Arrow ((***))
 import Data.Coded
 import Data.Normalize
 import Data.Pair
@@ -83,6 +84,24 @@ instance Composable a b => Normalize (a:/:b) where
             delta = fromInteger $ count a'
             in normalize $ a' :/: (adjusted + delta)
 
+instance (Num a, Zeroed a, Composable a b) => Num (a:/:b) where
+    (a:/:b) + (x:/:y) = (a+x) :/: (b+y)
+    (a:/:b) - (x:/:y) = (a-x) :/: (b-y)
+    (a:/:b) * (x:/:y) = (a*x) :/: (b*y)
+    negate (a:/:b) = negate a :/: b
+    abs (a:/:b) = abs a :/: abs b
+    signum (a:/:_) = signum a :/: start (signum a)
+    fromInteger = fromTuple . app2nd elemify . split
+        where app2nd f (a, b) = (a, f a b)
+
+instance (Num a, Ord a, Zeroed a, Composable a b) => Real (a:/:b) where
+    toRational = fromIntegral . toInteger
+
+instance (Num a, Ord a, Zeroed a, Enum a, Normalize a, Integral b, Ranged b a) => Integral (a:/:b) where
+    toInteger = (size <$> left <*> right) . normal
+    quotRem a x = (fromInteger *** fromInteger) $
+        (toInteger a) `quotRem` (toInteger x)
+
 -- | Allows us to encode and decode the date
 instance (Zeroed a, Ord a, Composable a b) => Coded (a:/:b) where
     encode = (size <$> left <*> right) . normal
@@ -96,7 +115,11 @@ instance (Zeroed a, Ord a, Composable a b) => WriteBlock (a:/:b) where
 -- | Allows QuickCheck testing
 instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where
     arbitrary = (:/:) <$> arbitrary <*> arbitrary
+    -- This could be `shrink = normal`, if we didn't mind some trouble
+    -- debugging the normalization code...
     shrink (a:/:b) = [ x:/:b | x <- shrink a ] ++ [ a:/:y | y <- shrink b ]
+
+-- | TODO: Put the below two in terms of pairs
 
 -- | The size of an element and it's preceeding contexts.
 -- | For example, the size of (Year 2, Month 4) is 14 in the Gregorian

@@ -16,34 +16,15 @@ import Test.QuickCheck
 
 type Behaved x r = (Arbitrary x, Arbitrary r, Relative x ~ Maybe r)
 
-testDate :: forall d r. (DateLike d, Behaved d r) => d -> Test
-testDate d = testGroup "date composition"
-    [ testEnum d
-    , testCoded d
-    , testModable d
-    , testNormal d
-    , testProperty "no overflow" (\(x::d) -> overflow x == 0)
-    ]
-
-testTime :: forall t r. (TimeLike t, Behaved t r) => t -> Test
-testTime t = testGroup "time composition"
-    [ testEnum t
-    , testCoded t
-    , testModable t
-    , testNormal t
-    , testProperty "reconstructible" (\(x::t) ->
-        let (o, y) = normalize x
-            size = succ (maxBound - minBound :: t)
-            p = o * fromIntegral size
-        in (p + fromIntegral y) == fromIntegral x)
-    ]
-
-testDateTime :: forall d t z r s.
-    ( DateLike d, Behaved d r
-    , TimeLike t, Behaved t s
+testDateTime :: forall dt z r.
+    ( DateTimeLike dt z
+    , Behaved dt r
     , ZoneLike z
-    ) => DateTime d t z -> Test
+    ) => DateTime dt z -> Test
 testDateTime _ = testGroup "DateTime"
-    [ testDate (undefined::d)
-    , testTime (undefined::t)
+    [ testEnum (undefined::dt)
+    , testCoded (undefined::dt)
+    , testModable (undefined::dt)
+    , testNormal (undefined::dt)
+    , testProperty "no overflow" (\(x::dt) -> overflow x == 0)
     ]

@@ -11,7 +11,6 @@ import Data.Coded
 import Data.Normalize
 import Data.Pair
 import Data.Zeroed
-import Data.Ranged (Ranged(start))
 import Test.QuickCheck.Arbitrary
 import Text.Format.Write
 
@@ -19,8 +18,7 @@ import Text.Format.Write
 data a ::: b = a ::: b
 
 type Composable a b =
-    ( Bounded a
-    , Bounded b
+    ( Bounded b
     , Integral a
     , Integral b
     , Normalize a
@@ -33,8 +31,8 @@ instance Composable a b => Eq (a:::b) where
         (c:::d) = normal y
         in a == c && b == d
 
-instance (Zeroed a, Ranged b a) => Zeroed (a:::b) where
-    zero = zero ::: start zero
+instance (Zeroed a, Bounded b) => Zeroed (a:::b) where
+    zero = zero ::: minBound
 
 -- | Ordering is determined post-normalization
 instance Composable a b => Ord (a:::b) where
@@ -105,6 +103,7 @@ instance (Arbitrary a, Arbitrary b) => Arbitrary (a:::b) where
     shrink (a:::b) = [ x:::b | x <- shrink a ] ++ [ a:::y | y <- shrink b ]
 
 -- | Allows us to encode and decode the time
+-- | TODO: remove dependency
 instance (Integral a, Integral b, Bounded b) => Coded (a:::b) where
     encode (a:::b) = (toInteger a * size) + toInteger b
         where size = toInteger (range :: b)

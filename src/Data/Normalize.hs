@@ -1,4 +1,4 @@
-module Data.Normalize (Normalize(..)) where
+module Data.Normalize (Normalize(..), like) where
 import Control.Arrow
 
 -- | This class is for values that can be entered (and persisted) in
@@ -24,3 +24,6 @@ instance Normalize Integer where
 instance Normalize Int where
     normalize = const 0 &&& id
     isNormal = const True
+
+like :: (Eq a, Normalize a) => a -> a -> Bool
+a `like` b = normal a == normal b

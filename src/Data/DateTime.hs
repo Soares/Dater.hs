@@ -9,8 +9,6 @@ module Data.DateTime
     , (:::)(..)
     , (:/:)(..)
     , DateTimeLike
-    , DateLike
-    , TimeLike
     , ZoneLike
     ) where
 import Data.Coded
@@ -23,72 +21,41 @@ import Data.Zeroed
 import Text.Format.Write
 import Text.Printf (printf)
 
-type DateTimeLike d t z =
-    ( DateLike d
-    , TimeLike t
+type DateTimeLike dt z =
+    ( Zeroed dt
+    , Integral dt
+    , Normalize dt
+    , Modable dt
+    , Coded dt
+    , Show dt
+    , Eq (Relative dt)
+    , Ord (Relative dt)
+    , Show (Relative dt)
     , ZoneLike z
-    )
-
-type DateLike d =
-    ( Zeroed d
-    , Enum d
-    , Coded d
-    , Normalize d
-    , Modable d
-    , Eq d
-    , Ord d
-    , Show d
-    , Eq (Relative d)
-    , Ord (Relative d)
-    , Show (Relative d)
-    )
-
-type TimeLike t =
-    ( Integral t
-    , Bounded t
-    , Coded t
-    , Normalize t
-    , Modable t
-    , Show t
-    , Eq (Relative t)
-    , Ord (Relative t)
-    , Show (Relative t)
     )
 
 type ZoneLike z =
     ( Normalize z
     )
 
-data DateTime d t z = DateTime
-    { date     :: d
-    , time     :: t
+data DateTime dt z = DateTime
+    { dateTime :: dt
     , extra    :: Rational
     , zone     :: z
     } deriving (Eq, Ord)
 
-instance (Show d, Show t, Show z) => Show (DateTime d t z) where
-    show (DateTime d t x z) = printf "%s %s.%s %s" d' t' x' z' where
-        d' = show d :: String
-        t' = show t :: String
+instance (Show dt, Show z) => Show (DateTime dt z) where
+    show (DateTime dt x z) = printf "%s.%s %s" (show dt) x' (show z) where
         x' = printf "%d/%d" (numerator x) (denominator x) :: String
-        z' = show z :: String
 
-instance DateTimeLike d t z => Normalize (DateTime d t z) where
-    isNormal (DateTime d t x z) =
-        isNormal z && x < 1 && isNormal t && isNormal d
-    normalize (DateTime d t x z) = (p, DateTime d' t' x' z') where
-        excess = truncate x :: Integer
+instance DateTimeLike dt z => Normalize (DateTime dt z) where
+    isNormal (DateTime dt x z) =
+        isNormal z && x < 1 && isNormal dt
+    normalize (DateTime dt x z) = (o, DateTime dt' x' z') where
+        excess = truncate x :: Int
         x' = x - fromIntegral excess
         (offset, z') = normalize z
-        (o, t') = normalize (add (toInteger offset + excess) t)
-        (p, d') = normalize (add o d)
-        add 0 a = a
-        add n a = if n > 0 then add (n-1) (succ a) else add (n+1) (pred a)
+        (o, dt') = normalize (dt + fromIntegral (offset + excess))
 
-instance DateTimeLike d t z => WriteBlock (DateTime d t z) where
-    numerical udt = show $ let
-        dt = normal udt
-        ymd = encode (date dt)
-        hms = encode (time dt)
-        size = toInteger (succ (maxBound - minBound) :: t)
-        in (ymd*size)+hms
+instance (Integral dt, Normalize dt, Normalize z) => WriteBlock (DateTime dt z) where
+    numerical = show . toInteger . normal . dateTime

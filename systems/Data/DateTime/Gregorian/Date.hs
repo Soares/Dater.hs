@@ -18,7 +18,7 @@ import Text.Printf (printf)
 
 -- TODO: Month is const
 
-type Date = Year :/: Month :/: Day
+type Date = Year ::: Month :/: Day
 
 
 newtype Year = Y Integer deriving
@@ -53,7 +53,6 @@ newtype Month = M N12 deriving
     (Eq, Ord, Num, Real, Enum, Integral, Arbitrary, Modable, Bounded)
 instance Relable Month where type Relative Month = Maybe Month
 instance Show Month where show (M m) = printf "%02d" m
-instance Ranged Month Year where range = const (1, 12) -- TODO: Remove
 instance WriteBlock Month where
     numerical = show . toInteger
     textual m = months !! (fromIntegral i - 1) where
@@ -67,7 +66,7 @@ newtype Day = D Int deriving
 instance Relable Day where type Relative Day = Maybe Day
 instance Arbitrary Day where arbitrary = maxMag 1000
 instance Show Day where show (D d) = printf "%02d" d
-instance Ranged Day (Year:/:Month) where
+instance Ranged Day (Year:::Month) where
     start = const 1
-    end (y:/:2) = if isLeapYear y then 29 else 28
-    end (_:/:m) = if m `elem` [9,4,6,10] then 30 else 31
+    end (y:::2) = if isLeapYear y then 29 else 28
+    end (_:::m) = if m `elem` [9,4,6,10] then 30 else 31
