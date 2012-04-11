@@ -68,7 +68,7 @@ writeSpecIn loc x = concatMap toStr where
     toStr (Right s) = s
     toStr (Left sec) = format c p w str where
         Section tgt sty p c alt = sec
-        elm = formattable loc x tgt
+        elm = formattable tgt loc x
         w = force 0 alt $ case elm of (Write o) -> map width o
         str = render sty alt elm
 
@@ -98,7 +98,7 @@ disjointBlock :: forall a b. WriteBlock (a, b) => [a] -> [b] -> Writers
 disjointBlock a b = Write $ zip (cycle a) (cycle b)
 
 class Formatter x f where
-    formattable :: Maybe (Locale x) -> x -> f -> Writers
+    formattable :: f -> Maybe (Locale x) -> x -> Writers
 
 instance WriteBlock Integer where
     numerical = show

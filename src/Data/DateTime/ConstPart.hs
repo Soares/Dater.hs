@@ -10,6 +10,8 @@ import Control.Arrow
 import Data.Coded
 import Data.Normalize
 import Data.Pair
+import Data.Zeroed
+import Data.Ranged (Ranged(start))
 import Test.QuickCheck.Arbitrary
 import Text.Format.Write
 
@@ -30,6 +32,9 @@ instance Composable a b => Eq (a:::b) where
         (a:::b) = normal x
         (c:::d) = normal y
         in a == c && b == d
+
+instance (Zeroed a, Ranged b a) => Zeroed (a:::b) where
+    zero = zero ::: start zero
 
 -- | Ordering is determined post-normalization
 instance Composable a b => Ord (a:::b) where

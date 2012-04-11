@@ -49,7 +49,7 @@ instance (Zeroed a, Composable a b) => Zeroed (a:/:b) where
     zero = zero :/: start zero
 
 -- | Allows us to generate prior and succeeding dates
-instance (Zeroed a, Composable a b) => Enum (a:/:b) where
+instance (Zeroed a, Ord a, Composable a b) => Enum (a:/:b) where
     succ (a:/:b)
         | not (isNormal (a:/:b)) = succ (normal (a:/:b))
         | b < end a = a :/: succ b
@@ -84,13 +84,13 @@ instance Composable a b => Normalize (a:/:b) where
             in normalize $ a' :/: (adjusted + delta)
 
 -- | Allows us to encode and decode the date
-instance (Zeroed a, Composable a b) => Coded (a:/:b) where
+instance (Zeroed a, Ord a, Composable a b) => Coded (a:/:b) where
     encode = (size <$> left <*> right) . normal
     decode = fromTuple . (id **^ elemify) . split
         where (**^) f g (a, b) = (f a, g a b)
 
 -- | When asked to be formatted, give the number of days since 0
-instance (Zeroed a, Composable a b) => WriteBlock (a:/:b) where
+instance (Zeroed a, Ord a, Composable a b) => WriteBlock (a:/:b) where
     numerical = show . encode
 
 -- | Allows QuickCheck testing
@@ -103,7 +103,7 @@ instance (Arbitrary a, Arbitrary b) => Arbitrary (a:/:b) where
 -- | calendar, because April of Year 2 is the 14th (zero-indexed) month
 -- | of the calendar. (Year 1, Month 1 is size 0.)
 -- | (Year 0, Month 12) is size -1, by contrast.
-size :: (Zeroed a, Integral b, Ranged b a) => a -> b -> Integer
+size :: (Zeroed a, Enum a, Ord a, Integral b, Ranged b a) => a -> b -> Integer
 size a b = intify a b + ((if a >= zero then 1 else -1) * sizea) where
     sizea = sum $ map count $ predecessors a
 
@@ -111,7 +111,7 @@ size a b = intify a b + ((if a >= zero then 1 else -1) * sizea) where
 -- | quotients keep changing. It splits an integer into a quotient
 -- | and a remainder, where the quotient is (for instance) of type
 -- | (Year:/:Month) and the remainder is used to construct the Day.
-split :: (Zeroed a, Integral b, Ranged b a) => Integer -> (a, Integer)
+split :: (Zeroed a, Enum a, Integral b, Ranged b a) => Integer -> (a, Integer)
 split n = choose 0 elems where
     elems = if n >= 0 then succs zero else preds (pred zero)
     succs a = a : succs (succ a)

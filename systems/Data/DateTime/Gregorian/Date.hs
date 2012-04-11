@@ -1,17 +1,10 @@
--- TODO: Cleanup
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 module Data.DateTime.Gregorian.Date where
 import Data.DateTime
-import Data.DateTime.Gregorian.Places
-import Data.DateTime.Gregorian.TimeZones
-import Data.Ratio (numerator, denominator)
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
@@ -21,9 +14,9 @@ import System.Random
 import Test.QuickCheck
 import Text.Format.Read
 import Text.Format.Write
-import Text.Format.DateTime.Standard (Standard)
-import qualified Text.Format.DateTime.Standard as Standard
 import Text.Printf (printf)
+
+-- TODO: Month is const
 
 type Date = Year :/: Month :/: Day
 
@@ -42,24 +35,31 @@ isLeapYear y
     | otherwise = False
 
 
-newtype Month = M Int deriving
-    (Eq, Ord, Num, Real, Enum, Integral, Random, Modable)
+months :: [String]
+months =
+    [ "January"
+    , "February"
+    , "March"
+    , "April"
+    , "May"
+    , "June"
+    , "July"
+    , "August", "September"
+    , "October"
+    , "November"
+    , "December"
+    ]
+newtype Month = M N12 deriving
+    (Eq, Ord, Num, Real, Enum, Integral, Arbitrary, Modable, Bounded)
 instance Relable Month where type Relative Month = Maybe Month
-instance Arbitrary Month where arbitrary = maxMag 1000
 instance Show Month where show (M m) = printf "%02d" m
-instance Ranged Month Year where range = const (1, 12)
+instance Ranged Month Year where range = const (1, 12) -- TODO: Remove
 instance WriteBlock Month where
     numerical = show . toInteger
     textual m = months !! (fromIntegral i - 1) where
         i = if m `mod` 12 == 0 then 12 else m `mod` 12
-{- TODO: Read month
-instance Loadable Month where
-    names = const $ zip [1..] months
-    -}
-months :: [String]
-months = ["January", "February", "March", "April", "May", "June", "July",
-    "August", "September", "October", "November", "December" ]
-
+monthParsers :: [ParseBlock]
+monthParsers = map intStrParser $ zip [(1::Integer)..] months
 
 
 newtype Day = D Int deriving

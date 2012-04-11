@@ -103,4 +103,4 @@ flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
 -- | TODO: probably should be in list utils somewhere.
 force :: a -> Int -> [a] -> a
 force a _ [] = a
-force _ i xs = (concat $ repeat xs) !! i
+force _ i xs = cycle xs !! i

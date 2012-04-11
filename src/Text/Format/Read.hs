@@ -7,6 +7,7 @@ module Text.Format.Read
     , readSpec
     , readSpecIn
     , blockParser
+    , parseBlock
     , naturalParser
     , signParser
     , signedParser
@@ -17,6 +18,8 @@ module Text.Format.Read
     , disjointParser
     , paddedStringParser
     , padded
+    , intStrParser -- TODO: Cleanup this mess. And sort the whole thing.
+    , integerParser
     , Loader(..)
     , ParseBlock
     , ReadBlock(..)
@@ -42,6 +45,7 @@ import Text.ParserCombinators.Parsec
     , oneOf
     )
 
+-- TODO: Rethink these names
 type ParseBlock = (Padding -> Parser Integer, Casing -> Parser Integer)
 
 class Loader x f where
@@ -68,6 +72,15 @@ blockParser :: forall a. ReadBlock a => a -> ParseBlock
 blockParser _ = (fmap number . num, fmap number . text) where
     num = parseNumerical :: Padding -> Parser a
     text = parseTextual :: Casing -> Parser a
+
+intStrParser :: (Integer, String) -> ParseBlock
+intStrParser (i, s) = (integerParser i, (*> pure i) . flip stringParser s)
+
+integerParser :: Integer -> Padding -> Parser Integer
+integerParser i p = paddedStringParser (show i) p *> pure i
+
+parseBlock :: forall a. ReadBlock a => [a] -> [ParseBlock]
+parseBlock = map blockParser
 
 
 -- | Generate a parser according to a format string, without localization.

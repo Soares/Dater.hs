@@ -66,16 +66,6 @@ data DateTime d t z = DateTime
     , zone     :: z
     } deriving (Eq, Ord)
 
-{- TODO
-class YMDHMS a where
-    year :: (Formattable y, Loadable y) => a -> y
-    month :: (Formattable m, Loadable m) => a -> m
-    day :: (Formattable d, Loadable d) => a -> d
-    hour :: (Formattable h, Loadable h) => a -> h
-    minute :: (Formattable m, Loadable m) => a -> m
-    second :: (Formattable s, Loadable s) => a -> s
-    -}
-
 instance (Show d, Show t, Show z) => Show (DateTime d t z) where
     show (DateTime d t x z) = printf "%s %s.%s %s" d' t' x' z' where
         d' = show d :: String
@@ -90,9 +80,7 @@ instance DateTimeLike d t z => Normalize (DateTime d t z) where
         excess = truncate x :: Integer
         x' = x - fromIntegral excess
         (offset, z') = normalize z
-        -- TODO: Remove integral dependency from Date
-        -- (or add Integral varPart)
-        (o, t') = normalize (t + fromIntegral offset + fromIntegral excess)
+        (o, t') = normalize (add (toInteger offset + excess) t)
         (p, d') = normalize (add o d)
         add 0 a = a
         add n a = if n > 0 then add (n-1) (succ a) else add (n+1) (pred a)

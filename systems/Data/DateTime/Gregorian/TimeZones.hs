@@ -16,6 +16,8 @@ module Data.DateTime.Gregorian.TimeZones
     ) where
 import Control.Arrow
 import Control.Applicative
+import Data.DateTime.Gregorian.Date
+import Data.DateTime.Gregorian.Time
 import Data.DateTime.Gregorian.Places
 import Data.Locale
 import Data.Maybe (catMaybes)
@@ -26,10 +28,6 @@ import Text.Format.Read
 import Text.Format.Table (Padding(..), decrease)
 import Text.Printf (printf)
 import Text.ParserCombinators.Parsec hiding ((<|>))
-
--- TODO
-type Date = ()
-type Time = ()
 
 data instance Locale TimeZone = At Place Date Time
 
