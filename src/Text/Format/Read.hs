@@ -74,11 +74,11 @@ blockParser _ = (fmap number . num, fmap number . text) where
     num = parseNumerical :: Padding -> Parser a
     text = parseTextual :: Casing -> Parser a
 
-intStrParser :: (Integer, String) -> ParseBlock
+intStrParser :: (Integer, String) -> ParseBlock -- TODO: curry?
 intStrParser (i, s) = (integerParser i, (*> pure i) . flip stringParser s)
 
 stringsParser :: [String] -> [ParseBlock]
-stringsParser = map intStrParser . zip [0..]
+stringsParser = zipWith (curry intStrParser) [0..]
 
 integerParser :: Integer -> Padding -> Parser Integer
 integerParser i p = paddedStringParser (show i) p *> pure i

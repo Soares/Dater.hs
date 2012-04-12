@@ -7,7 +7,6 @@ import Data.Calendar.Gregorian
 import Data.Calendar.Tests
 import Data.Naturals.Tests
 import Data.Pair.Tests
-import Data.Zeroed.Tests
 
 main :: IO ()
 main = defaultMain tests
@@ -19,5 +18,4 @@ tests =
     -- TODO: Turn Kaol back on
     , testNaturals
     , testPairs
-    , testZeroed
     ]

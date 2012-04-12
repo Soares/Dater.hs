@@ -6,28 +6,23 @@
 {-# LANGUAGE TypeOperators #-}
 module Data.Calendar.Gregorian.Date where
 import Data.Calendar
+import Data.Calendar.Utils (maxMag)
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
 import Data.Pair
-import Data.Ranged
+import Data.BoundedIn
 import System.Random
 import Test.QuickCheck
 import Text.Format.Read
 import Text.Format.Write
 
--- TODO: Rename combinators to (:/) and (:?), change their showabilities
--- TODO: put days on a 0-n scale
-
-type Date = Year ::: Month :/: Day
+type Date = Year :/ Month :\ Day
 
 mkDate :: (Integral a, Integral b, Integral c) => a -> b -> c -> Date
-mkDate y m d = normal $ (shifted y) ::: (shifted m) :/: (shifted d)
-
--- TODO: Don't export this. Or move it somewhere better.
--- (Maybe add an Int shiftwidth?)
-shifted :: forall x y. (Integral x, Integral y) => x -> y
-shifted = fromIntegral . pred
+mkDate y m d = normal $ shifted y :/ shifted m :\ shifted d where
+    shifted :: forall x y. (Integral x, Integral y) => x -> y
+    shifted = fromIntegral . pred
 
 year :: Date -> Year
 year = left.left
@@ -73,10 +68,10 @@ instance Show Month where
     show (M 11) = "December"
     show (M m) = show (normal m)
 instance WriteBlock Month where
-    numerical (M m) = show ((normal m) + 1)
+    numerical (M m) = show (normal m + 1)
     textual = show
 monthParsers :: [ParseBlock]
-monthParsers = map intStrParser . zip [1..] $ map show months
+monthParsers = zipWith (curry intStrParser) [1..] (map show months)
     where months = [minBound .. maxBound :: Month]
 
 
@@ -85,8 +80,8 @@ newtype Day = D Int deriving
 instance Relable Day where type Relative Day = Maybe Day
 instance Arbitrary Day where arbitrary = maxMag 1000
 instance Show Day where show (D d) = show (d + 1)
-instance Ranged Day (Year:::Month) where
+instance BoundedIn Day (Year:/Month) where
     start = const 0
-    end ym@(_:::m) | m < minBound || m > maxBound = end $ normal ym
-    end (y:::2) = if isLeapYear y then D 28 else D 27
-    end (_:::m) = if m `elem` [9,4,6,10] then D 29 else D 30
+    end ym@(_:/m) | m < minBound || m > maxBound = end $ normal ym
+    end (y:/2) = if isLeapYear y then D 28 else D 27
+    end (_:/m) = if m `elem` [9,4,6,10] then D 29 else D 30

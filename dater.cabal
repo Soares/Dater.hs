@@ -37,10 +37,8 @@ Library
   Ghc-Options: -O2 -Wall
   Hs-Source-Dirs: src, systems, formats
   Exposed-Modules:
-    Data.Coded,
     Data.Calendar,
-    Data.Calendar.ConstPart,
-    Data.Calendar.VarPart,
+    Data.Calendar.Composers,
     Data.Calendar.Gregorian,
     Data.Calendar.Gregorian.Date,
     Data.Calendar.Gregorian.Time,
@@ -52,8 +50,7 @@ Library
     Data.Naturals,
     Data.Normalize,
     Data.Pair,
-    Data.Ranged,
-    Data.Zeroed,
+    Data.BoundedIn,
     Text.Format,
     Text.Format.Table,
     Text.Format.Read,

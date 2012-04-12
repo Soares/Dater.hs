@@ -7,6 +7,6 @@ import Data.Calendar.Gregorian.TimeZones
 import Data.Calendar.Gregorian.Places
 import Data.Calendar.ConstPart
 import Data.Calendar.VarPart
-import Data.Ranged
+import Data.BoundedIn
 import Data.Normalize
 import Data.Pair
