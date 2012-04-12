@@ -68,15 +68,13 @@ instance Constposable a b => Ord (a:/b) where (<=) = lt
 instance Varposable a b => Ord (a:\b) where (<=) = lt
 
 
--- | The constant composer uses a dash when showing, because it is simpler.
--- | The variable composer uses an equals sign.
--- | (I find it a bit confusing to use / and \ signs.)
 -- | If you want a well-formatted DateTime, you'll want to take a gander at
+-- | Text.Format
 instance (Show a, Show b) => Show (a:/b) where
-    show (a:/b) = show a ++ "-" ++ show b
+    show (a:/b) = show a ++ " | " ++ show b
 
 instance (Show a, Show b) => Show (a:\b) where
-    show (a:\b) = show a ++ "=" ++ show b
+    show (a:\b) = show a ++ " ! " ++ show b
 
 
 -- | Allows propagation of bounds through bounded constant compositions.
@@ -193,11 +191,11 @@ instance Varposable a b => Integral (a:\b) where
 -- | you're going to want to comment out the `shrink = normal` definitions.
 instance (Constposable a b, Arbitrary a, Arbitrary b) => Arbitrary (a:/b) where
     arbitrary = (:/) <$> arbitrary <*> arbitrary
-    shrink = pure . normal
+    -- shrink = pure . normal
 
 instance (Varposable a b, Arbitrary a, Arbitrary b) => Arbitrary (a:\b) where
     arbitrary = (:\) <$> arbitrary <*> arbitrary
-    shrink = pure . normal
+    -- shrink = pure . normal
 
 
 -- | Composed types can be formatted numerically.

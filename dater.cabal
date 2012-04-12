@@ -39,6 +39,7 @@ Library
   Exposed-Modules:
     Data.Calendar,
     Data.Calendar.Composers,
+    Data.Calendar.Utils,
     Data.Calendar.Gregorian,
     Data.Calendar.Gregorian.Date,
     Data.Calendar.Gregorian.Time,

@@ -5,8 +5,8 @@ import Data.Calendar.Gregorian.Date
 import Data.Calendar.Gregorian.Time
 import Data.Calendar.Gregorian.TimeZones
 import Data.Calendar.Gregorian.Places
-import Data.Calendar.ConstPart
-import Data.Calendar.VarPart
+import Data.Calendar.Composers
+import Data.Calendar.Utils
 import Data.BoundedIn
 import Data.Normalize
 import Data.Pair

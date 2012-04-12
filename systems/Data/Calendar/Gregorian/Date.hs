@@ -41,10 +41,23 @@ instance Show Year where show (Y y) = show (y + 1) -- Year 0 = 1AD
 
 isLeapYear :: Year -> Bool
 isLeapYear y -- Remember, Y 0 == 1AD, so Y 1999 = 2000AD etc.
+    | y < 7 = y `elem` negLeapYears
     | y `mod` 400 == 3 = True
     | y `mod` 100 == 3 = False
     | y `mod` 4 == 3 = True
     | otherwise = False
+
+negLeapYears :: [Year]
+negLeapYears = map bc [9, 12 .. 45] where bc = Y . succ . negate
+
+posLeapYears :: [Year]
+posLeapYears = filter isLeapYear [7, 11 ..]
+
+leapDaysNearerZero :: Date -> Int
+leapDaysNearerZero d = length $ takeWhile nearerZero ys where
+    leapDay y = y :/ M 1 :\ D 28
+    ys = map leapDay $ if d < 0 then negLeapYears else posLeapYears
+    nearerZero x = if d < 0 then x > d else x < d
 
 daysInYear :: Year -> Integer
 daysInYear y = if isLeapYear y then 366 else 365
@@ -66,7 +79,7 @@ instance Show Month where
     show (M  9) = "October"
     show (M 10) = "November"
     show (M 11) = "December"
-    show (M m) = show (normal m)
+    show (M m) = show (m `mod` 12)
 instance WriteBlock Month where
     numerical (M m) = show (normal m + 1)
     textual = show
@@ -83,5 +96,5 @@ instance Show Day where show (D d) = show (d + 1)
 instance BoundedIn Day (Year:/Month) where
     start = const 0
     end ym@(_:/m) | m < minBound || m > maxBound = end $ normal ym
-    end (y:/2) = if isLeapYear y then D 28 else D 27
-    end (_:/m) = if m `elem` [9,4,6,10] then D 29 else D 30
+    end (y:/1) = if isLeapYear y then D 28 else D 27
+    end (_:/m) = if m `elem` [8,3,5,9] then D 29 else D 30

@@ -8,7 +8,7 @@ module Data.Calendar.Gregorian.Time where
 import Control.Arrow (first)
 import Data.Pair
 import Data.Calendar
-import Data.Calendar.Utils (maxMag, search, signed, nearerZero, allBefore)
+import Data.Calendar.Utils (maxMag, search, signed)
 import Data.Calendar.Gregorian.Date
 import Data.Modable
 import Data.Naturals
@@ -18,7 +18,6 @@ import System.Random
 import Test.QuickCheck (Arbitrary(..))
 import Text.Format.Read
 import Text.Format.Write
-import Text.Printf (printf)
 
 type Time = Hour :/ Minute :/ N60
 
@@ -34,13 +33,13 @@ second = right
 newtype Hour = H N24 deriving
     ( Eq, Ord, Num, Real, Enum, Integral
     , Bounded, Normalize, Modable, ReadBlock, WriteBlock, Arbitrary)
-instance Show Hour where show (H h) = printf "%02d" h
+instance Show Hour where show (H h) = show h
 instance Relable Hour where type Relative Hour = Maybe Hour
 
 newtype Minute = P N60 deriving
     ( Eq, Ord, Num, Real, Enum, Integral
     , Bounded, Normalize, Modable, ReadBlock, WriteBlock, Arbitrary)
-instance Show Minute where show (P p) = printf "%02d" p
+instance Show Minute where show (P p) = show p
 instance Relable Minute where type Relative Minute = Maybe Minute
 
 newtype Second = S Int deriving
@@ -51,6 +50,7 @@ instance Show Second where show (S d) = show d
 instance BoundedIn Second (Date:/Hour:/Minute) where
     start = const 0
     end ymdhm = fromInteger $ leapsIn leapSeconds ymdhm + 59
+    {- 
     size ymdhm@(ymdh@(ymd@(ym@(y:/m):\d):/h):/p) s = let
         -- We could make this even faster, if we wanted to.
         -- We could simply multiply by a bunch of constants,
@@ -63,12 +63,32 @@ instance BoundedIn Second (Date:/Hour:/Minute) where
         p' = sum $ map (secondsInMinute . (ymdh:/)) (nearerZero y p)
         s' = intify ymdhm s
         in signed y $ y' + m' + d' + h' + p' + s'
+    -}
+    size ymdhm@(ymd@(y:/m:\d):/h:/p) s = let
+        ld = signed y $ toInteger $ leapDaysNearerZero ymd
+        ls = signed y $ toInteger $ leapSecondsNearerZero ymdhm
+        fy = 365 * 86400 * (toInteger y)
+        -- We count month days in Y 0 = 1AD because 1AD has no leap years,
+        -- and leap years are already accounted for in `ld`
+        fm = 86400 * (sum $ map (countIn . (Y 0:/)) [minBound..pred m])
+        fd = 86400 * ((toInteger d) + ld)
+        fh = 3600 * (toInteger h)
+        fp = 60 * (toInteger p)
+        fs = (toInteger s) + ls
+        in fy + fm + fd + fh + fp + fs
     split i = let
         (y, j) = search secondsInYear (if i >= 0 then [0..] else [-1,-2..]) i
         (ym, k) = search secondsInMonth (map (y:/) [minBound..maxBound]) j
         (ymd, l) = search secondsInDay (map (ym:\) [start ym..end ym]) k
         (ymdh, m) = search secondsInHour (map (ymd:/) [minBound..maxBound]) l
         in search secondsInMinute (map (ymdh:/) [minBound..maxBound]) m
+
+daysInNormalMonth :: Month -> Int
+daysInNormalMonth m
+    | m < 0 || m > 11 = daysInNormalMonth $ m `mod` 12
+    | m `elem` [8,3,5,9] = 30
+    | m == 1 = 28
+    | otherwise = 31
 
 leapSeconds :: [(Date:/Hour:/Minute, Integer)]
 leapSeconds =
@@ -107,6 +127,11 @@ leapSecondDays :: [(Date, Integer)]
 leapSecondDays = map (first $ left.left) leapSeconds
 leapSecondHours :: [(Date:/Hour, Integer)]
 leapSecondHours = map (first left) leapSeconds
+
+leapSecondsNearerZero :: (Date:/Hour:/Minute) -> Int
+leapSecondsNearerZero dhm
+    | dhm > 0 = length $ takeWhile ((< dhm) . fst) leapSeconds
+    | otherwise = 0
 
 leapsIn :: Eq a => [(a, Integer)] -> a -> Integer
 leapsIn xs x = sum $ map snd $ filter ((== x) . fst) xs
