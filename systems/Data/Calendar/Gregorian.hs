@@ -6,61 +6,48 @@
 -- Probably. Read more on how orphans work on such things.
 -- (Make sure we can make other instances of Formatter Gregorian)
 {-# OPTIONS_GHC -fno-warn-orphans #-}
--- Remove after refactoring time
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Data.DateTime.Gregorian where
+module Data.Calendar.Gregorian where
 import Control.Applicative
 import Control.Arrow ((&&&))
-import Data.DateTime
-import Data.DateTime.Gregorian.Places
-import Data.DateTime.Gregorian.Date
--- TODO: import Data.DateTime.Gregorian.Time
-import Data.DateTime.Gregorian.TimeZones
-import Data.Pair
-import Data.Naturals
+import Data.Calendar
+import Data.Calendar.Gregorian.Places
+import Data.Calendar.Gregorian.DateTime (DateTime)
+import Data.Calendar.Gregorian.Date (Date, Year, Month, Day)
+import Data.Calendar.Gregorian.Time (Time, Hour, Minute, Second)
+import qualified Data.Calendar.Gregorian.DateTime as DateTime
+import Data.Calendar.Gregorian.TimeZones
 import Data.Ratio (numerator, denominator)
 -- TODO: import Text.Format.Read
 import Text.Format.Write
-import qualified Text.Format.DateTime.Standard as Standard
+import qualified Text.Format.Calendar.Standard as Standard
 import Text.Printf (printf)
--- Remove after refactoring time
-import Data.Modable
-import Data.Ranged
-import System.Random
-import Test.QuickCheck
-import Text.Format.Read
 
--- TODO
-type Gregorian = DateTime (Date:::Hour:::Minute:/:Second) TimeZone
+type Gregorian = Calendar DateTime TimeZone
 data instance Locale Gregorian = Loc { place :: Place }
 
-
 date :: Gregorian -> Date
-date = left.left.left.dateTime
+date = DateTime.date . dateTime
 
-time :: Gregorian -> Integer
-time g = (h*60*60) + (m*60) + s where
-    h = toInteger $ hour g
-    m = toInteger $ minute g
-    s = toInteger $ second g
+time :: Gregorian -> Time
+time = DateTime.time . dateTime
 
 year :: Gregorian -> Year
-year = left.left.left.left.left.dateTime
+year = DateTime.year . dateTime
 
 month :: Gregorian -> Month
-month = right.left.left.left.left.dateTime
+month = DateTime.month . dateTime
 
 day :: Gregorian -> Day
-day = right.left.left.left.dateTime
+day = DateTime.day . dateTime
 
 hour :: Gregorian -> Hour
-hour = right.left.left.dateTime
+hour = DateTime.hour . dateTime
 
 minute :: Gregorian -> Minute
-minute = right.left.dateTime
+minute = DateTime.minute . dateTime
 
 second :: Gregorian -> Second
-second = right.dateTime
+second = DateTime.second . dateTime
 
 meridian :: Gregorian -> String
 meridian g = if hour g >= 12 then "pm" else "am"
@@ -72,7 +59,7 @@ instance Formatter Gregorian Standard.Standard where
     formattable Standard.TimeZone Nothing = nonlocalTimeZoneStyles . zone
     formattable Standard.TimeZone (Just loc) = tzs <$> zloc <*> zone where
         tzs = localTimeZoneStyles
-        zloc = undefined -- TODO At (place loc) <$> dateTime
+        zloc = At (place loc) <$> dateTime
     formattable Standard.Century _ = out . (`div` 100) . year
     formattable Standard.Year _ = out . year
     formattable Standard.Month _ = out . month

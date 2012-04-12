@@ -1,4 +1,4 @@
-module Data.DateTime.Gregorian.Places where
+module Data.Calendar.Gregorian.Places where
 
 data Place
     = Africa

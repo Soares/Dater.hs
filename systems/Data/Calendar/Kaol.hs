@@ -6,8 +6,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-module Data.DateTime.Kaol where
-import Data.DateTime
+module Data.Calendar.Kaol where
+import Data.Calendar
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
@@ -53,4 +53,4 @@ instance Ranged Day (Year:/:Month) where
 
 type YMD = Year :/: Month :/: Day
 type HMS = N10  ::: N100 ::: N100
-type Kaol = DateTime YMD HMS
+type Kaol = Calendar YMD HMS

@@ -4,29 +4,29 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.DateTime
-    ( DateTime(..)
+module Data.Calendar
+    ( Calendar(..)
     , (:::)(..)
     , (:/:)(..)
-    , DateTimeLike
+    , CalendarLike
     , ZoneLike
     ) where
-import Data.Coded
-import Data.DateTime.ConstPart ((:::)(..))
-import Data.DateTime.VarPart ((:/:)(..))
+import Data.Calendar.ConstPart ((:::)(..))
+import Data.Calendar.VarPart ((:/:)(..))
 import Data.Modable
 import Data.Normalize
 import Data.Ratio (numerator, denominator)
-import Data.Zeroed
 import Text.Format.Write
 import Text.Printf (printf)
 
-type DateTimeLike dt z =
-    ( Zeroed dt
-    , Integral dt
+type CalendarLike dt z =
+    ( Integral dt
+    , Real dt
+    , Num dt
+    , Ord dt
+    , Eq dt
     , Normalize dt
     , Modable dt
-    , Coded dt
     , Show dt
     , Eq (Relative dt)
     , Ord (Relative dt)
@@ -38,24 +38,24 @@ type ZoneLike z =
     ( Normalize z
     )
 
-data DateTime dt z = DateTime
+data Calendar dt z = Calendar
     { dateTime :: dt
     , extra    :: Rational
     , zone     :: z
     } deriving (Eq, Ord)
 
-instance (Show dt, Show z) => Show (DateTime dt z) where
-    show (DateTime dt x z) = printf "%s.%s %s" (show dt) x' (show z) where
+instance (Show dt, Show z) => Show (Calendar dt z) where
+    show (Calendar dt x z) = printf "%s.%s %s" (show dt) x' (show z) where
         x' = printf "%d/%d" (numerator x) (denominator x) :: String
 
-instance DateTimeLike dt z => Normalize (DateTime dt z) where
-    isNormal (DateTime dt x z) =
+instance CalendarLike dt z => Normalize (Calendar dt z) where
+    isNormal (Calendar dt x z) =
         isNormal z && x < 1 && isNormal dt
-    normalize (DateTime dt x z) = (o, DateTime dt' x' z') where
+    normalize (Calendar dt x z) = (o, Calendar dt' x' z') where
         excess = truncate x :: Int
         x' = x - fromIntegral excess
         (offset, z') = normalize z
         (o, dt') = normalize (dt + fromIntegral (offset + excess))
 
-instance (Integral dt, Normalize dt, Normalize z) => WriteBlock (DateTime dt z) where
+instance (Integral dt, Normalize dt, Normalize z) => WriteBlock (Calendar dt z) where
     numerical = show . toInteger . normal . dateTime

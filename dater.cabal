@@ -38,15 +38,15 @@ Library
   Hs-Source-Dirs: src, systems, formats
   Exposed-Modules:
     Data.Coded,
-    Data.DateTime,
-    Data.DateTime.ConstPart,
-    Data.DateTime.VarPart,
-    Data.DateTime.Gregorian,
-    Data.DateTime.Gregorian.Date,
-    Data.DateTime.Gregorian.Time,
-    Data.DateTime.Gregorian.Places,
-    Data.DateTime.Gregorian.TimeZones,
-    Data.DateTime.Kaol,
+    Data.Calendar,
+    Data.Calendar.ConstPart,
+    Data.Calendar.VarPart,
+    Data.Calendar.Gregorian,
+    Data.Calendar.Gregorian.Date,
+    Data.Calendar.Gregorian.Time,
+    Data.Calendar.Gregorian.Places,
+    Data.Calendar.Gregorian.TimeZones,
+    Data.Calendar.Kaol,
     Data.Locale
     Data.Modable,
     Data.Naturals,
@@ -59,5 +59,5 @@ Library
     Text.Format.Read,
     Text.Format.Write,
     Text.Format.Parse,
-    Text.Format.DateTime.Standard,
+    Text.Format.Calendar.Standard,
     Text.Parse

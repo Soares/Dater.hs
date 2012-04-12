@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-module Data.DateTime.Gregorian.TimeZones
+module Data.Calendar.Gregorian.TimeZones
     ( TimeZone(..)
     , ShowStyle(..)
     , Locale(..)
@@ -16,9 +16,8 @@ module Data.DateTime.Gregorian.TimeZones
     ) where
 import Control.Arrow
 import Control.Applicative
-import Data.DateTime.Gregorian.Date
-import Data.DateTime.Gregorian.Time
-import Data.DateTime.Gregorian.Places
+import Data.Calendar.Gregorian.DateTime (DateTime)
+import Data.Calendar.Gregorian.Places
 import Data.Locale
 import Data.Maybe (catMaybes)
 import Data.Function (on)
@@ -29,7 +28,7 @@ import Text.Format.Table (Padding(..), decrease)
 import Text.Printf (printf)
 import Text.ParserCombinators.Parsec hiding ((<|>))
 
-data instance Locale TimeZone = At Place Date Time
+data instance Locale TimeZone = At Place DateTime
 
 data ShowStyle
     = Numeric

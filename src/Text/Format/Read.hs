@@ -19,6 +19,7 @@ module Text.Format.Read
     , paddedStringParser
     , padded
     , intStrParser -- TODO: Cleanup this mess. And sort the whole thing.
+    , stringsParser
     , integerParser
     , Loader(..)
     , ParseBlock
@@ -75,6 +76,9 @@ blockParser _ = (fmap number . num, fmap number . text) where
 
 intStrParser :: (Integer, String) -> ParseBlock
 intStrParser (i, s) = (integerParser i, (*> pure i) . flip stringParser s)
+
+stringsParser :: [String] -> [ParseBlock]
+stringsParser = map intStrParser . zip [0..]
 
 integerParser :: Integer -> Padding -> Parser Integer
 integerParser i p = paddedStringParser (show i) p *> pure i
