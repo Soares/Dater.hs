@@ -1,9 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
--- TODO: Rename to BoundedIn
-module Data.Ranged
-    ( Ranged(range, start, end, size, split)
+module Data.BoundedIn
+    ( BoundedIn(range, start, end, size, split)
     , signed
     , search
     , elements
@@ -23,11 +22,11 @@ import Test.QuickCheck (sized, choose, Gen)
 -- TODO: We can do a lot of cleaning up with these integral constraints
 
 
--- | The counterpart to `Bounded`, Ranged elements `a` are bounded
+-- | The counterpart to `Bounded`, BoundedIn elements `a` are bounded
 -- | given a certain context `x`. For example, `Day` types are bounded in
 -- | `Year:/:Month` types, where the maximum bound of the `Day` is dependant
 -- | both upon the Month (September or October?) and the year (Leap year?)
-class (Integral a, Integral x) => Ranged a x | a -> x, x -> a where
+class (Integral a, Integral x) => BoundedIn a x | a -> x, x -> a where
     range :: x -> (a, a)
     range = start &&& end
     start :: x -> a
@@ -56,13 +55,13 @@ search cnt xs n = search' 0 xs where
 
 -- == Operations on individual elements == --
 
--- | Whether or not an orderable Ranged element is in the given range
+-- | Whether or not an orderable BoundedIn element is in the given range
 -- | (Useful for normalization purposes)
-isInRange :: (Ord b, Ranged b a) => a -> b -> Bool
+isInRange :: (Ord b, BoundedIn b a) => a -> b -> Bool
 isInRange a b = b >= start a && b <= end a
 
 -- | Encode a ranged value as an Integer
-intify :: forall a x. Ranged a x => x -> a -> Integer
+intify :: forall a x. BoundedIn a x => x -> a -> Integer
 intify x a
     | x >= 0 = fromIntegral (a - start x)
     | otherwise = fromIntegral ((1 + (end (pred x))) - a)
@@ -71,11 +70,11 @@ intify x a
 -- == Operations on the set of elements == --
 
 -- | A list of all the values in the range
-elements :: Ranged a x => x -> [a]
+elements :: BoundedIn a x => x -> [a]
 elements = enumFromTo <$> start <*> end
 
 -- | The count of all values in the range
-count :: (Integral a, Ranged a x) => x -> Integer
+count :: (Integral a, BoundedIn a x) => x -> Integer
 count x = succ $ fromIntegral (end x) - fromIntegral (start x)
 
 
@@ -86,12 +85,12 @@ maxMag n = sized $ \s -> choose $ from (negate $ max s n, max s n)
     where from = fromIntegral *** fromIntegral
 
 
--- TODO: Not sure that these should be in Ranged.
+-- TODO: Not sure that these should be in BoundedIn.
 allBefore :: Integral a => a -> [a]
 allBefore a = if a >= 0 then [0..pred a] else [succ a..pred 0]
 
 nearerZero :: (Integral x, Integral a, Bounded a) => x -> a -> [a]
 nearerZero x a = if x >= 0 then [minBound..pred a] else [succ a..maxBound]
 
-predecessorsIn :: Ranged a x => x -> a -> [a]
+predecessorsIn :: BoundedIn a x => x -> a -> [a]
 predecessorsIn x a = if x >= 0 then [start x..pred a] else [succ a..end x]

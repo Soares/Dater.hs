@@ -6,13 +6,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Calendar
     ( Calendar(..)
-    , (:::)(..)
-    , (:/:)(..)
+    , (:/)(..)
+    , (:\)(..)
     , CalendarLike
     , ZoneLike
     ) where
-import Data.Calendar.ConstPart ((:::)(..))
-import Data.Calendar.VarPart ((:/:)(..))
+import Data.Calendar.Composers
 import Data.Modable
 import Data.Normalize
 import Data.Ratio (numerator, denominator)
