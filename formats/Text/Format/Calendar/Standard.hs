@@ -1,4 +1,4 @@
-module Text.Format.DateTime.Standard where
+module Text.Format.Calendar.Standard where
 import Text.Format.Table
 import Text.Format.Parse
 import qualified Data.Map as Map

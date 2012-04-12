@@ -1,7 +1,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Data.Pair.Tests where
-import Data.DateTime ((:::))
 import Data.Pair
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
@@ -18,7 +17,4 @@ testPair _ = testGroup "pair"
     ]
 
 testPairs :: Test
-testPairs = testGroup "Pairs"
-    [ testPair (undefined :: (Int, Int))
-    , testPair (undefined :: (Int:::Int))
-    ]
+testPairs = testGroup "Pairs" [ testPair (undefined :: (Int, Int)) ]
