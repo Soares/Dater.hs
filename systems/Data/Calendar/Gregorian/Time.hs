@@ -53,35 +53,22 @@ instance Ranged Second (Date:::Hour:::Minute) where
     start = const 0
     end ymdhm = fromInteger $ (leapsIn leapSeconds ymdhm) + 59
     -- TODO: Why the hell is normalize so slow?
-    -- TODO: we can do way faster than this.
     -- Simply do the multiplications, then calculate the leap days & seconds
-    -- TODO: find the leap second
-    size dt@(y:::mo:/:d:::h:::mi) s = let
-        sy = sum $ map secondsInYear predsY
-        smo = sum $ map secondsInMonth [y:::x | x <- predsB mo]
-        sd = sum $ map secondsInDay [y:::mo:/:x | x<-predsR (y:::mo) d]
-        sh = sum $ map secondsInHour [y:::mo:/:d:::x | x <- predsB h]
-        smi = sum $ map secondsInMinute [y:::mo:/:d:::h:::x|x<-predsB mi]
-        ss = intify dt s
-        predsY = if y < 0 then [y+1..pred 0] else [0..y-1]
-        predsB :: forall a. (Integral a, Bounded a) => a -> [a]
-        predsB a = if y < 0 then [a+1..maxBound] else [minBound..a-1]
-        predsR :: forall a x. (Integral a, Ranged a x) => x -> a -> [a]
-        predsR x a = if y < 0 then [a+1..end x] else [start x..a-1]
-        in signed y ((trace (printf "%d from year" sy) sy)
-            + (trace (printf "%d from month" smo) smo)
-            + (trace (printf "%d from day" sd) sd)
-            + (trace (printf "%d from hour" sh) sh)
-            + (trace (printf "%d from minute" smi) smi)
-            + (trace (printf "%d from second" ss) ss))
+    size ymdhm@(ymdh@(ymd@(ym@(y:::m):/:d):::h):::p) s = let
+        sumap = sum . map
+        y' = sum $ map secondsInYear predsY
+        m' = sum $ map (secondsInMonth . (y:::)) (nearerZero y m)
+        d' = sum $ map (secondsInDay . (ym:/:)) (predecessorsIn ym d)
+        h' = sum $ map (secondsInHour . (ymd:::)) (nearerZero y h)
+        p' = sum $ map (secondsInMinute . (ymdh:::)) (nearerZero y p)
+        s' = intify ymdhm s
+        in signed y $ y' + m' + d' + h' + p' + s'
     split i = let
-        (y, j) = search secondsInYear (elems i) (tr "i" i)
-        (ym, k) = search secondsInMonth [y:::mo | mo <- [minBound..maxBound]] (tr "j" j)
-        (ymd, l) = search secondsInDay [ym:/:d | d <- elements ym] (tr "k" k)
-        (ymdh, m) = search secondsInHour [ymd:::h | h <- [minBound..maxBound]] (tr "l" l)
-        in search secondsInMinute [ymdh:::mi | mi <- [minBound..maxBound]] (tr "m" m)
-
-tr str v = trace (printf "%d %s" (toInteger v) str) v
+        (y, j) = search secondsInYear (if i >= 0 then [0..] else [-1,-2..]) i
+        (ym, k) = search secondsInMonth (map (y:::) [minBound..maxBound]) j
+        (ymd, l) = search secondsInDay (map (ym:/:) [minBound..maxBound]) k
+        (ymdh, m) = search secondsInHour (map (ymd:::) [minBound..maxBound]) l
+        in search secondsInMinute (map (ymdh:::) [minBound..maxBound]) m
 
 leapSeconds :: [(Date:::Hour:::Minute, Integer)]
 leapSeconds =

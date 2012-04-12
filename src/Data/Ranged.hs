@@ -1,9 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+-- TODO: Rename to BoundedIn
 module Data.Ranged
     ( Ranged(range, start, end, size, split)
-    , elems -- TODO: rename
     , signed
     , search
     , elements
@@ -12,6 +12,9 @@ module Data.Ranged
     , elemify
     , isInRange
     , maxMag
+    , allBefore
+    , nearerZero
+    , predecessorsIn
     ) where
 import Control.Applicative
 import Control.Arrow
@@ -33,16 +36,14 @@ class (Integral a, Integral x) => Ranged a x | a -> x, x -> a where
     end :: x -> a
     end = snd . range
     size :: x -> a -> Integer
-    size a b = signed a $ intify a b + (sum $ map count $ predecessors a)
+    size a b = signed a $ intify a b + (sum $ map count $ allBefore a)
     split :: Integer -> (x, a)
     split = search count =<< elems
+        where elems n = if n >= 0 then [0..] else [-1, -2..]
 
 signed :: forall a. Integral a => a -> Integer -> Integer
 signed = (*) . toInteger . sign where
     sign a = if a >= 0 then 1 else -1
-
-elems :: (Integral a, Integral b) => a -> [b]
-elems n = if n >= 0 then [0..] else [-1, -2..]
 
 search :: (Integral x, Integral a) => (x -> Integer) -> [x] -> Integer -> (x, a)
 search cnt xs n = search' 0 xs where
@@ -93,25 +94,12 @@ maxMag n = sized $ \s -> choose $ from (negate $ max s n, max s n)
     where from = fromIntegral *** fromIntegral
 
 
--- TODO: Move to a better place
--- | All elements between the given element and the zero element.
--- | The positive direction contains the zero element, the negative
--- | direction does not.
--- | (Ex. predecessors 3 = [0,1,2,3]; predecessors (-2) = [-2, -1]
-predecessors :: Integral a => a -> [a]
-predecessors a
-    | a == 0 = []
-    | a > 0 = succTo 0 (pred a)
-    | otherwise = predTo (pred 0) a
+-- TODO: Not sure that these should be in Ranged.
+allBefore :: Integral a => a -> [a]
+allBefore a = if a >= 0 then [0..pred a] else [succ a..pred 0]
 
--- | The list of all values from one point to another, inclusive
-succTo :: (Eq a, Enum a) => a -> a -> [a]
-succTo a b
-    | a == b = [a]
-    | otherwise = a : succTo (succ a) b
+nearerZero :: (Num x, Integral a, Bounded a) => x -> a -> [a]
+nearerZero x a = if x >= 0 then [minBound..pred a] else [succ a..maxBound]
 
--- | The list of all values from one point to backwards to another, inclusive
-predTo :: (Eq a, Enum a) => a -> a -> [a]
-predTo a b
-    | a == b = [a]
-    | otherwise = a : predTo (pred a) b
+predecessorsIn :: Ranged a x => x -> a -> [a]
+predecessorsIn x a = if x >= 0 then [start x..pred a] else [succ a..end x]
