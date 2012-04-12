@@ -8,13 +8,14 @@ module Data.Calendar.Gregorian.Time where
 import Control.Arrow (first)
 import Data.Pair
 import Data.Calendar
+import Data.Calendar.Utils (maxMag, search, signed, nearerZero, allBefore)
 import Data.Calendar.Gregorian.Date
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
 import Data.BoundedIn
 import System.Random
-import Test.QuickCheck hiding (elements) -- TODO: other way around.
+import Test.QuickCheck (Arbitrary(..))
 import Text.Format.Read
 import Text.Format.Write
 import Text.Printf (printf)
@@ -45,12 +46,11 @@ instance Relable Minute where type Relative Minute = Maybe Minute
 newtype Second = S Int deriving
     (Eq, Ord, Num, Real, Enum, Integral, Random, Modable, ReadBlock, WriteBlock)
 instance Relable Second where type Relative Second = Maybe Second
-instance Arbitrary Second where arbitrary = maxMag 10
+instance Arbitrary Second where arbitrary = maxMag 1000
 instance Show Second where show (S d) = show d
 instance BoundedIn Second (Date:/Hour:/Minute) where
     start = const 0
-    end ymdhm = fromInteger $ (leapsIn leapSeconds ymdhm) + 59
-    -- TODO: Why the hell is normalize so slow?
+    end ymdhm = fromInteger $ leapsIn leapSeconds ymdhm + 59
     size ymdhm@(ymdh@(ymd@(ym@(y:/m):\d):/h):/p) s = let
         -- We could make this even faster, if we wanted to.
         -- We could simply multiply by a bunch of constants,
@@ -58,7 +58,7 @@ instance BoundedIn Second (Date:/Hour:/Minute) where
         -- been and add those in, and then add in the number of leap seconds.
         y' = sum $ map secondsInYear $ allBefore y
         m' = sum $ map (secondsInMonth . (y:/)) (nearerZero y m)
-        d' = sum $ map (secondsInDay . (ym:\)) (predecessorsIn ym d)
+        d' = sum $ map (secondsInDay . (ym:\)) (nearerZeroIn ym d)
         h' = sum $ map (secondsInHour . (ymd:/)) (nearerZero y h)
         p' = sum $ map (secondsInMinute . (ymdh:/)) (nearerZero y p)
         s' = intify ymdhm s
@@ -106,16 +106,16 @@ leapSecondMonths = map (first $ left.left.left) leapSeconds
 leapSecondDays :: [(Date, Integer)]
 leapSecondDays = map (first $ left.left) leapSeconds
 leapSecondHours :: [(Date:/Hour, Integer)]
-leapSecondHours = map (first $ left) leapSeconds
+leapSecondHours = map (first left) leapSeconds
 
 leapsIn :: Eq a => [(a, Integer)] -> a -> Integer
 leapsIn xs x = sum $ map snd $ filter ((== x) . fst) xs
 
 secondsInYear :: Year -> Integer
-secondsInYear y = leapsIn leapSecondYears y + (daysInYear y) * 60 * 60 * 24
+secondsInYear y = leapsIn leapSecondYears y + daysInYear y * 60 * 60 * 24
 
 secondsInMonth :: (Year:/Month) -> Integer
-secondsInMonth ym = leapsIn leapSecondMonths ym + (60 * 60 * 24) * (count ym)
+secondsInMonth ym = leapsIn leapSecondMonths ym + (60 * 60 * 24) * countIn ym
 
 secondsInDay :: Date -> Integer
 secondsInDay ymd = leapsIn leapSecondDays ymd + 60 * 60 * 24

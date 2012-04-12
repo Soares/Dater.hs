@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Data.Calendar.Gregorian.Date where
 import Data.Calendar
+import Data.Calendar.Utils (maxMag)
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
@@ -19,7 +20,7 @@ import Text.Format.Write
 type Date = Year :/ Month :\ Day
 
 mkDate :: (Integral a, Integral b, Integral c) => a -> b -> c -> Date
-mkDate y m d = normal $ (shifted y) :/ (shifted m) :\ (shifted d) where
+mkDate y m d = normal $ shifted y :/ shifted m :\ shifted d where
     shifted :: forall x y. (Integral x, Integral y) => x -> y
     shifted = fromIntegral . pred
 
@@ -67,10 +68,10 @@ instance Show Month where
     show (M 11) = "December"
     show (M m) = show (normal m)
 instance WriteBlock Month where
-    numerical (M m) = show ((normal m) + 1)
+    numerical (M m) = show (normal m + 1)
     textual = show
 monthParsers :: [ParseBlock]
-monthParsers = map intStrParser . zip [1..] $ map show months
+monthParsers = zipWith (curry intStrParser) [1..] (map show months)
     where months = [minBound .. maxBound :: Month]
 
 

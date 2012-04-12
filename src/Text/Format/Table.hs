@@ -15,6 +15,7 @@ module Text.Format.Table
     , reoption
     , force
     ) where
+import Data.Calendar.Utils (force)
 import Data.Maybe (fromMaybe)
 import Data.Map (Map)
 
@@ -95,12 +96,3 @@ flatten (Left (o, d) : xs) = reduce o d ++ flatten xs where
         , alternate = fromMaybe (alternate sec) (alt opts)
         }
     update _ str = str
-
--- | Helper function to select readers/writers, etc.
--- | Attempts to find a value at a certain index in a list.
--- | If the index is not present, falls back to the first element in the list.
--- | If the list is empty, falls back to a given default value.
--- | TODO: probably should be in list utils somewhere.
-force :: a -> Int -> [a] -> a
-force a _ [] = a
-force _ i xs = cycle xs !! i

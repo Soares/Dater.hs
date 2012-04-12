@@ -1,20 +1,16 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Calendar.Composers ((:/)((:/)), (:\)((:\))) where
 import Control.Applicative
 import Control.Arrow ((***), second)
+import Data.Calendar.Utils (count)
 import Data.Normalize
 import Data.Pair
-import Data.BoundedIn
+import Data.BoundedIn (BoundedIn(..), isInBounds, countIn)
 import Test.QuickCheck.Arbitrary
 import Text.Format.Write
 
@@ -96,27 +92,27 @@ instance Constposable a b => Normalize (a:/b) where
     normalize (a:/b)
         | isNormal (a:/b) = (0, a:/b)
         | otherwise = let
-            (q, b') = second (+ minBound) $ b `divMod` depth
+            (q, b') = second (+ minBound) $ b `divMod` count
             (o, a') = normalize (a + fromIntegral q)
             in (o, a':/b')
 
 instance Varposable a b => Normalize (a:\b) where
-    isNormal (a:\b) = isNormal a && isInRange a b
+    isNormal (a:\b) = isNormal a && isInBounds a b
     normalize (a:\b)
         | not (isNormal a) = let
             (o, a') = normalize a
             (p, ab) = normalize $ a' :\ b
             in (o+p, ab)
-        | isInRange a b = (0, a:\b)
+        | isInBounds a b = (0, a:\b)
         | b > end a = let
             a' = succ a
             adjusted = b + start a' - start a
-            delta = fromInteger $ count a
+            delta = fromInteger $ countIn a
             in normalize $ a' :\ (adjusted - delta)
         | otherwise = let
             a' = pred a
             adjusted = b + start a' - start a
-            delta = fromInteger $ count a'
+            delta = fromInteger $ countIn a'
             in normalize $ a' :\ (adjusted + delta)
 
 
@@ -127,11 +123,11 @@ instance (Integral a, Integral b, Bounded b) => Num (a:/b) where
     (a:/b) + (x:/y) = (a+x):/(b+y)
     (a:/b) - (x:/y) = (a-x):/(b-y)
     (a:/b) * (x:/y) = (a*x):/(b*y)
-    abs (a:/b) = (abs a) :/ b
+    abs (a:/b) = abs a :/ b
     signum (0:/0) = 0
     signum (a:/_) = if a < 0 then -1 else 1
     fromInteger = fromTuple . (fromInteger *** fromInteger) . (`divMod` x)
-        where x = toInteger (depth::b)
+        where x = toInteger (count::b)
 
 instance (Integral a, Integral b, BoundedIn b a) => Num (a:\b) where
     (a:\b) + (x:\y) = (a+x) :\ (b+y)
@@ -158,33 +154,33 @@ instance Constposable a b => Enum (a:/b) where
     toEnum = fromIntegral
     fromEnum = fromIntegral
     pred (a:/b)
-        | b == minBound = (pred a) :/ maxBound
-        | otherwise = a :/ (pred b)
+        | b == minBound = pred a :/ maxBound
+        | otherwise = a :/ pred b
     succ (a:/b)
-        | b == maxBound = (succ a) :/ minBound
-        | otherwise = a :/ (succ b)
+        | b == maxBound = succ a :/ minBound
+        | otherwise = a :/ succ b
 
 instance Varposable a b => Enum (a:\b) where
     toEnum = fromIntegral
     fromEnum = fromIntegral
     succ (a:\b)
         | b == end a = succ a :\ start (succ a)
-        | otherwise = a :\ (succ b)
+        | otherwise = a :\ succ b
     pred (a:\b)
         | b == start a = pred a :\ end (pred a)
-        | otherwise = a :\ (pred b)
+        | otherwise = a :\ pred b
 
 
 -- | The real prize here is `toInteger`.
 -- | `quotRem` (and therefore `divMod`) just delegate the work to Integer.
 -- | It's not pretty, but it works. Don't expect much efficiency there.
 dumbQuotRem :: Integral a => a -> a -> (a, a)
-dumbQuotRem a b = from $ (toInteger a) `quotRem` (toInteger b)
-    where from = (fromInteger *** fromInteger)
+dumbQuotRem a b = from $ toInteger a `quotRem` toInteger b
+    where from = fromInteger *** fromInteger
 
 instance Constposable a b => Integral (a:/b) where
     toInteger (a:/b) = (toInteger a * x) + toInteger b
-        where x = toInteger (depth :: b)
+        where x = toInteger (count::b)
     quotRem = dumbQuotRem
 
 instance Varposable a b => Integral (a:\b) where
@@ -211,9 +207,3 @@ instance Constposable a b => WriteBlock (a:/b) where
 
 instance Varposable a b => WriteBlock (a:\b) where
     numerical = show . toInteger
-
-
--- | TODO: Find a new home for this.
--- | The range within the boundaries of a bounded number
-depth :: forall t. (Bounded t, Num t, Enum t) => t
-depth = succ (maxBound - minBound)

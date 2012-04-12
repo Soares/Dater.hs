@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Calendar.Kaol where
 import Data.Calendar
+import Data.Calendar.Utils (maxMag)
 import Data.Modable
 import Data.Naturals
 import Data.Normalize

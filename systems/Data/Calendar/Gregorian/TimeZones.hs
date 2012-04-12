@@ -18,6 +18,7 @@ import Control.Arrow
 import Control.Applicative
 import Data.Calendar.Gregorian.DateTime (DateTime)
 import Data.Calendar.Gregorian.Places
+import Data.Calendar.Utils (flatten2)
 import Data.Locale
 import Data.Maybe (catMaybes)
 import Data.Function (on)
@@ -55,7 +56,7 @@ minute :: TimeZone -> Int
 minute = (`mod` 60) . offset
 
 toDecimal :: TimeZone -> Integer
-toDecimal tz = toInteger $ (100 * hour tz) + (minute tz)
+toDecimal tz = toInteger $ (100 * hour tz) + minute tz
 
 fromDecimal :: Integer -> TimeZone
 fromDecimal i = simple $ ((i `div` 100) * 60) + (i `mod` 100)
@@ -82,11 +83,6 @@ nonlocalTimeZoneStyles tz = disjointBlock nums names where
     nums = map (`showTimeZone` tz) [minBound..maxBound]
     names = catMaybes [code tz, name tz, Just $ showTimeZone HourMinute tz]
 
--- TODO: move to list utils
-flatten2 :: [(a, a)] -> [a]
-flatten2 (x:xs) = fst x : snd x : flatten2 xs
-flatten2 [] = []
-
 localTimeZoneStyles :: Locale TimeZone -> TimeZone -> Writers
 localTimeZoneStyles loc tz = djb nums names where
     djb = disjointBlock :: [String] -> [String] -> Writers
@@ -105,7 +101,7 @@ localTimeZoneParsers loc = disjointParser ps ns where
     p = (fmap toDecimal .) . parseTimeZone . toEnum
     zs = concatMap flat $ timeZones loc
     flat (tz, short, long) = [(short, tz), (long, tz)]
-    makeParser (n, tz) c = try ((stringParser c n) *> pure (toDecimal tz))
+    makeParser (n, tz) c = try (stringParser c n *> pure (toDecimal tz))
     ns = map makeParser zs
 
 zoneNames :: Locale TimeZone -> TimeZone -> [(String, String)]
@@ -141,4 +137,4 @@ parseTimeZone HourMinuteSecond p =
     parseTimeZone HourMinute (dropChunk p) <* string ":00"
 parseTimeZone Minimal p =
     try (parseTimeZone HourMinute p)
-    <|> (fromHourMinute <$> (sizedSignedParser 3 p) <*> pure (0::Int))
+    <|> (fromHourMinute <$> sizedSignedParser 3 p <*> pure (0::Int))
