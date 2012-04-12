@@ -4,7 +4,15 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-module Data.Calendar.Gregorian.Time where
+module Data.Calendar.Gregorian.Time
+    ( Time
+    , Hour(..)
+    , Minute(..)
+    , Second(..)
+    , hour
+    , minute
+    , second
+    ) where
 import Control.Arrow (first)
 import Data.Pair
 import Data.Calendar
@@ -50,20 +58,6 @@ instance Show Second where show (S d) = show d
 instance BoundedIn Second (Date:/Hour:/Minute) where
     start = const 0
     end ymdhm = fromInteger $ leapsIn leapSeconds ymdhm + 59
-    {- 
-    size ymdhm@(ymdh@(ymd@(ym@(y:/m):\d):/h):/p) s = let
-        -- We could make this even faster, if we wanted to.
-        -- We could simply multiply by a bunch of constants,
-        -- and then spend some time calculating how many leap days here have
-        -- been and add those in, and then add in the number of leap seconds.
-        y' = sum $ map secondsInYear $ allBefore y
-        m' = sum $ map (secondsInMonth . (y:/)) (nearerZero y m)
-        d' = sum $ map (secondsInDay . (ym:\)) (nearerZeroIn ym d)
-        h' = sum $ map (secondsInHour . (ymd:/)) (nearerZero y h)
-        p' = sum $ map (secondsInMinute . (ymdh:/)) (nearerZero y p)
-        s' = intify ymdhm s
-        in signed y $ y' + m' + d' + h' + p' + s'
-    -}
     size ymdhm@(ymd@(y:/m:\d):/h:/p) s = let
         ld = signed y $ toInteger $ leapDaysNearerZero ymd
         ls = signed y $ toInteger $ leapSecondsNearerZero ymdhm
@@ -82,42 +76,6 @@ instance BoundedIn Second (Date:/Hour:/Minute) where
         (ymd, l) = search secondsInDay (map (ym:\) [start ym..end ym]) k
         (ymdh, m) = search secondsInHour (map (ymd:/) [minBound..maxBound]) l
         in search secondsInMinute (map (ymdh:/) [minBound..maxBound]) m
-
-daysInNormalMonth :: Month -> Int
-daysInNormalMonth m
-    | m < 0 || m > 11 = daysInNormalMonth $ m `mod` 12
-    | m `elem` [8,3,5,9] = 30
-    | m == 1 = 28
-    | otherwise = 31
-
-leapSeconds :: [(Date:/Hour:/Minute, Integer)]
-leapSeconds =
-    [ (on 1972  6 30 :/ 23 :/ 59, 1)
-    , (on 1972 12 31 :/ 23 :/ 59, 1)
-    , (on 1973 12 31 :/ 23 :/ 59, 1)
-    , (on 1974 12 31 :/ 23 :/ 59, 1)
-    , (on 1976 12 31 :/ 23 :/ 59, 1)
-    , (on 1976 12 31 :/ 23 :/ 59, 1)
-    , (on 1977 12 31 :/ 23 :/ 59, 1)
-    , (on 1978 12 31 :/ 23 :/ 59, 1)
-    , (on 1979 12 31 :/ 23 :/ 59, 1)
-    , (on 1981  6 30 :/ 23 :/ 59, 1)
-    , (on 1982  6 30 :/ 23 :/ 59, 1)
-    , (on 1983  6 30 :/ 23 :/ 59, 1)
-    , (on 1986  6 30 :/ 23 :/ 59, 1)
-    , (on 1987 12 31 :/ 23 :/ 59, 1)
-    , (on 1989 12 31 :/ 23 :/ 59, 1)
-    , (on 1990 12 31 :/ 23 :/ 59, 1)
-    , (on 1992  6 30 :/ 23 :/ 59, 1)
-    , (on 1993  6 30 :/ 23 :/ 59, 1)
-    , (on 1994  6 30 :/ 23 :/ 59, 1)
-    , (on 1996 12 31 :/ 23 :/ 59, 1)
-    , (on 1997  6 30 :/ 23 :/ 59, 1)
-    , (on 1998 12 31 :/ 23 :/ 59, 1)
-    , (on 2006 12 31 :/ 23 :/ 59, 1)
-    , (on 2008 12 31 :/ 23 :/ 59, 1)
-    , (on 2012  6 30 :/ 23 :/ 59, 1)
-    ] where on = mkDate :: Int -> Int -> Int -> Date
 
 leapSecondYears :: [(Year, Integer)]
 leapSecondYears = map (first $ left.left.left.left) leapSeconds
@@ -150,3 +108,32 @@ secondsInHour ymdh = leapsIn leapSecondHours ymdh + 60 * 60
 
 secondsInMinute :: (Date:/Hour:/Minute) -> Integer
 secondsInMinute ymdhm = leapsIn leapSeconds ymdhm + 60
+
+leapSeconds :: [(Date:/Hour:/Minute, Integer)]
+leapSeconds =
+    [ (on 1972  6 30 :/ 23 :/ 59, 1)
+    , (on 1972 12 31 :/ 23 :/ 59, 1)
+    , (on 1973 12 31 :/ 23 :/ 59, 1)
+    , (on 1974 12 31 :/ 23 :/ 59, 1)
+    , (on 1976 12 31 :/ 23 :/ 59, 1)
+    , (on 1976 12 31 :/ 23 :/ 59, 1)
+    , (on 1977 12 31 :/ 23 :/ 59, 1)
+    , (on 1978 12 31 :/ 23 :/ 59, 1)
+    , (on 1979 12 31 :/ 23 :/ 59, 1)
+    , (on 1981  6 30 :/ 23 :/ 59, 1)
+    , (on 1982  6 30 :/ 23 :/ 59, 1)
+    , (on 1983  6 30 :/ 23 :/ 59, 1)
+    , (on 1986  6 30 :/ 23 :/ 59, 1)
+    , (on 1987 12 31 :/ 23 :/ 59, 1)
+    , (on 1989 12 31 :/ 23 :/ 59, 1)
+    , (on 1990 12 31 :/ 23 :/ 59, 1)
+    , (on 1992  6 30 :/ 23 :/ 59, 1)
+    , (on 1993  6 30 :/ 23 :/ 59, 1)
+    , (on 1994  6 30 :/ 23 :/ 59, 1)
+    , (on 1996 12 31 :/ 23 :/ 59, 1)
+    , (on 1997  6 30 :/ 23 :/ 59, 1)
+    , (on 1998 12 31 :/ 23 :/ 59, 1)
+    , (on 2006 12 31 :/ 23 :/ 59, 1)
+    , (on 2008 12 31 :/ 23 :/ 59, 1)
+    , (on 2012  6 30 :/ 23 :/ 59, 1)
+    ] where on = mkDate :: Int -> Int -> Int -> Date
