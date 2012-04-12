@@ -12,8 +12,22 @@ import Data.Ranged
 import Test.QuickCheck.Arbitrary
 import Text.Format.Write
 
+-- TODO: Rename combinators.
+
 -- | A simple combinator, intended for combining types into a date type
-data a :/: b = a :/: b deriving (Eq, Ord)
+data a :/: b = a :/: b
+
+instance (Normalize a, Integral a, Integral b, Ranged b a) => Eq (a:/:b) where
+    x == y = let
+        (a:/:b) = normal x
+        (c:/:d) = normal y
+        in a==c && b==d
+
+instance (Normalize a, Integral a, Integral b, Ranged b a) => Ord (a:/:b) where
+    x <= y = let
+        (a:/:b) = normal x
+        (c:/:d) = normal y
+        in if a == c then b <= d else a <= c
 
 -- | Some utilities to treat :/: like a tuple
 instance Pair (:/:) where
@@ -71,7 +85,7 @@ instance (Integral a, Integral b, Ranged b a) => Num (a:/:b) where
     negate (a:/:b) = negate a :/: b
     abs (a:/:b) = abs a :/: abs b
     signum (0:/:0) = 0
-    signum (a:/:b) = if a < 0 then -1 else 1
+    signum (a:/:_) = if a < 0 then -1 else 1
     fromInteger = fromTuple . split
 
 -- TODO: Remove composable (globally)

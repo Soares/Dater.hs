@@ -87,5 +87,6 @@ instance Arbitrary Day where arbitrary = maxMag 1000
 instance Show Day where show (D d) = show (d + 1)
 instance Ranged Day (Year:::Month) where
     start = const 0
-    end (y:::2) = if isLeapYear y then 28 else 27
-    end (_:::m) = if m `elem` [9,4,6,10] then 29 else 30
+    end ym@(_:::m) | m < minBound || m > maxBound = end $ normal ym
+    end (y:::2) = if isLeapYear y then D 28 else D 27
+    end (_:::m) = if m `elem` [9,4,6,10] then D 29 else D 30

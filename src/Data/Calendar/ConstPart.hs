@@ -6,7 +6,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Calendar.ConstPart ((:::)(..)) where
 import Control.Applicative
-import Control.Arrow
+import Control.Arrow ((***))
 import Data.Normalize
 import Data.Pair
 import Test.QuickCheck.Arbitrary
@@ -15,7 +15,19 @@ import Text.Format.Write
 -- TODO: All quotRem should be divMod
 
 -- | A simple combinator, inteded for combining types into a time type.
-data a ::: b = a ::: b deriving (Eq, Ord)
+data a ::: b = a ::: b
+
+instance (Normalize a, Integral a, Integral b, Bounded b) => Eq (a:::b) where
+    x == y = let
+        (a:::b) = normal x
+        (c:::d) = normal y
+        in a==c && b==d
+
+instance (Normalize a, Integral a, Integral b, Bounded b) => Ord (a:::b) where
+    x <= y = let
+        (a:::b) = normal x
+        (c:::d) = normal y
+        in if a == c then b <= d else a <= c
 
 -- | Some utilities to allow us to treat ::: like a tuple
 instance Pair (:::) where
@@ -54,28 +66,28 @@ instance (Integral a, Integral b, Bounded b) => Num (a:::b) where
     (a:::b) * (x:::y) = (a*x):::(b*y)
     abs (a:::b) = abs a:::b
     signum (0:::0) = 0
-    signum (a:::b) = if a < 0 then -1 else 1
+    signum (a:::_) = if a < 0 then -1 else 1
     fromInteger = fromTuple . (fromInteger *** fromInteger) . (`divMod` size)
         where size = toInteger (range::b)
 
 -- | Really just necessary so that we can get Integral support
-instance (Integral a, Integral b, Bounded b) => Real (a:::b) where
+instance (Normalize a, Integral a, Integral b, Bounded b) => Real (a:::b) where
     toRational = toRational . toInteger
 
 -- | Really just necessary so that we can get Integral support
-instance (Integral a, Integral b, Bounded b) => Enum (a:::b) where
+instance (Normalize a, Integral a, Integral b, Bounded b) => Enum (a:::b) where
     toEnum = fromIntegral
     fromEnum = fromIntegral
     pred (a:::b)
-        | b > minBound = a ::: pred b
-        | otherwise = pred a ::: maxBound b
+        | b > minBound = a ::: (pred b)
+        | otherwise = (pred a) ::: maxBound
     succ (a:::b)
         | b < maxBound = a ::: succ b
-        | otherwise = succ a ::: minBound b
+        | otherwise = (succ a) ::: minBound
 
 -- | Really we just want the toInteger function.
 -- | The quotRem implementation is quite contrived.
-instance (Integral a, Integral b, Bounded b) => Integral (a:::b) where
+instance (Normalize a, Integral a, Integral b, Bounded b) => Integral (a:::b) where
     toInteger (a:::b) = (toInteger a * size) + toInteger b
         where size = toInteger (range :: b)
     quotRem a x = (fromInteger *** fromInteger) $
@@ -87,7 +99,7 @@ instance (Arbitrary a, Arbitrary b) => Arbitrary (a:::b) where
     shrink (a:::b) = [ x:::b | x <- shrink a ] ++ [ a:::y | y <- shrink b ]
 
 -- | When asked to be formatted, give the number of seconds since 0
-instance (Integral a, Integral b, Bounded b) => WriteBlock (a:::b) where
+instance (Normalize a, Integral a, Integral b, Bounded b) => WriteBlock (a:::b) where
     numerical = show . toInteger
 
 -- | The range within the boundaries of a bounded number

@@ -18,8 +18,6 @@ import Test.QuickCheck hiding (elements) -- TODO: other way around.
 import Text.Format.Read
 import Text.Format.Write
 import Text.Printf (printf)
-
-import Debug.Trace (trace) -- TODO
     
 type Time = Hour ::: Minute ::: N60
 
@@ -53,10 +51,12 @@ instance Ranged Second (Date:::Hour:::Minute) where
     start = const 0
     end ymdhm = fromInteger $ (leapsIn leapSeconds ymdhm) + 59
     -- TODO: Why the hell is normalize so slow?
-    -- Simply do the multiplications, then calculate the leap days & seconds
     size ymdhm@(ymdh@(ymd@(ym@(y:::m):/:d):::h):::p) s = let
-        sumap = sum . map
-        y' = sum $ map secondsInYear predsY
+        -- We could make this even faster, if we wanted to.
+        -- We could simply multiply by a bunch of constants,
+        -- and then spend some time calculating how many leap days here have
+        -- been and add those in, and then add in the number of leap seconds.
+        y' = sum $ map secondsInYear $ allBefore y
         m' = sum $ map (secondsInMonth . (y:::)) (nearerZero y m)
         d' = sum $ map (secondsInDay . (ym:/:)) (predecessorsIn ym d)
         h' = sum $ map (secondsInHour . (ymd:::)) (nearerZero y h)
@@ -66,7 +66,7 @@ instance Ranged Second (Date:::Hour:::Minute) where
     split i = let
         (y, j) = search secondsInYear (if i >= 0 then [0..] else [-1,-2..]) i
         (ym, k) = search secondsInMonth (map (y:::) [minBound..maxBound]) j
-        (ymd, l) = search secondsInDay (map (ym:/:) [minBound..maxBound]) k
+        (ymd, l) = search secondsInDay (map (ym:/:) [start ym..end ym]) k
         (ymdh, m) = search secondsInHour (map (ymd:::) [minBound..maxBound]) l
         in search secondsInMinute (map (ymdh:::) [minBound..maxBound]) m
 

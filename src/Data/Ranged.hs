@@ -9,7 +9,6 @@ module Data.Ranged
     , elements
     , count
     , intify
-    , elemify
     , isInRange
     , maxMag
     , allBefore
@@ -42,7 +41,7 @@ class (Integral a, Integral x) => Ranged a x | a -> x, x -> a where
         where elems n = if n >= 0 then [0..] else [-1, -2..]
 
 signed :: forall a. Integral a => a -> Integer -> Integer
-signed = (*) . toInteger . sign where
+signed = (*) . sign where
     sign a = if a >= 0 then 1 else -1
 
 search :: (Integral x, Integral a) => (x -> Integer) -> [x] -> Integer -> (x, a)
@@ -68,13 +67,6 @@ intify x a
     | x >= 0 = fromIntegral (a - start x)
     | otherwise = fromIntegral ((1 + (end (pred x))) - a)
 
--- | Decode a ranged value from an Integer
--- | TODO: This probably doesn't work.
--- | At the least, quickcheck it's indempotence against intify.
-elemify :: forall a b. (Ranged b a, Integral b) => a -> Integer -> b
-elemify a i = fromIntegral (i + fromIntegral (start a :: b))
-
-
 
 -- == Operations on the set of elements == --
 
@@ -98,7 +90,7 @@ maxMag n = sized $ \s -> choose $ from (negate $ max s n, max s n)
 allBefore :: Integral a => a -> [a]
 allBefore a = if a >= 0 then [0..pred a] else [succ a..pred 0]
 
-nearerZero :: (Num x, Integral a, Bounded a) => x -> a -> [a]
+nearerZero :: (Integral x, Integral a, Bounded a) => x -> a -> [a]
 nearerZero x a = if x >= 0 then [minBound..pred a] else [succ a..maxBound]
 
 predecessorsIn :: Ranged a x => x -> a -> [a]

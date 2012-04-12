@@ -3,7 +3,7 @@
 import Test.Framework
 
 import Data.Calendar.Gregorian
-import Data.Calendar.Kaol
+-- import Data.Calendar.Kaol
 import Data.Calendar.Tests
 import Data.Naturals.Tests
 import Data.Pair.Tests
