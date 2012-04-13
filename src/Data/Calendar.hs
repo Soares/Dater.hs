@@ -27,9 +27,6 @@ type CalendarLike dt z =
     , Normalize dt
     , Modable dt
     , Show dt
-    , Eq (Relative dt)
-    , Ord (Relative dt)
-    , Show (Relative dt)
     , ZoneLike z
     )
 

@@ -12,9 +12,9 @@ module Data.Calendar.Gregorian.Time
     , hour
     , minute
     , second
+    , leapSeconds
     ) where
-import Control.Arrow (first)
-import Data.Pair
+import Data.Pair hiding (second)
 import Data.Calendar
 import Data.Calendar.Utils (maxMag, search, signed)
 import Data.Calendar.Gregorian.Date
@@ -22,6 +22,7 @@ import Data.Modable
 import Data.Naturals
 import Data.Normalize
 import Data.BoundedIn
+import Prelude hiding (fst, snd)
 import System.Random
 import Test.QuickCheck (Arbitrary(..))
 import Text.Format.Read
@@ -30,13 +31,13 @@ import Text.Format.Write
 type Time = Hour :/ Minute :/ N60
 
 hour :: Time -> Hour
-hour = left.left
+hour = fst.fst
 
 minute :: Time -> Minute
-minute = right.left
+minute = snd.fst
 
 second :: Time -> N60
-second = right
+second = snd
 
 newtype Hour = H N24 deriving
     ( Eq, Ord, Num, Real, Enum, Integral
@@ -78,13 +79,13 @@ instance BoundedIn Second (Date:/Hour:/Minute) where
         in search secondsInMinute (map (ymdh:/) [minBound..maxBound]) m
 
 leapSecondYears :: [(Year, Integer)]
-leapSecondYears = map (first $ left.left.left.left) leapSeconds
+leapSecondYears = map (first $ fst.fst.fst.fst) leapSeconds
 leapSecondMonths :: [(Year:/Month, Integer)]
-leapSecondMonths = map (first $ left.left.left) leapSeconds
+leapSecondMonths = map (first $ fst.fst.fst) leapSeconds
 leapSecondDays :: [(Date, Integer)]
-leapSecondDays = map (first $ left.left) leapSeconds
+leapSecondDays = map (first $ fst.fst) leapSeconds
 leapSecondHours :: [(Date:/Hour, Integer)]
-leapSecondHours = map (first left) leapSeconds
+leapSecondHours = map (first fst) leapSeconds
 
 leapSecondsNearerZero :: (Date:/Hour:/Minute) -> Int
 leapSecondsNearerZero dhm

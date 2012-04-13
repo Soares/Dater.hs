@@ -18,8 +18,8 @@ import Control.Arrow
 import Control.Applicative
 import Data.Calendar.Gregorian.DateTime (DateTime)
 import Data.Calendar.Gregorian.Places
-import Data.Calendar.Utils (flatten2)
-import Data.Locale
+import Data.Calendar.Utils (flatten2, (.:))
+import Data.Calendar.Locale
 import Data.Maybe (catMaybes)
 import Data.Function (on)
 import Data.Normalize
@@ -92,13 +92,13 @@ localTimeZoneStyles loc tz = djb nums names where
 nonlocalTimeZoneParsers :: [ParseBlock]
 nonlocalTimeZoneParsers = zip ps (repeat err) where
     ps = map p [minBound..maxBound]
-    p = (fmap toDecimal .) . parseTimeZone . toEnum
+    p = fmap toDecimal .: (parseTimeZone . toEnum)
     err _ = fail "time zone names can not be parsed without a locale"
 
 localTimeZoneParsers :: Locale TimeZone -> [ParseBlock]
 localTimeZoneParsers loc = disjointParser ps ns where
     ps = map p [minBound..maxBound]
-    p = (fmap toDecimal .) . parseTimeZone . toEnum
+    p = fmap toDecimal .: (parseTimeZone . toEnum)
     zs = concatMap flat $ timeZones loc
     flat (tz, short, long) = [(short, tz), (long, tz)]
     makeParser (n, tz) c = try (stringParser c n *> pure (toDecimal tz))

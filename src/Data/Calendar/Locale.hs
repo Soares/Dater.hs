@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
-module Data.Locale where
+module Data.Calendar.Locale where
 
 data family Locale x

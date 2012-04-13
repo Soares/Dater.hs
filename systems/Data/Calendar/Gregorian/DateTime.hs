@@ -5,11 +5,12 @@ import Data.Pair
 import Data.Calendar.Gregorian.Date (Date, Year, Month, Day)
 import qualified Data.Calendar.Gregorian.Date as Date
 import Data.Calendar.Gregorian.Time (Time, Hour, Minute, Second)
+import Prelude hiding (fst, snd)
 
 type DateTime = Date :/ Hour :/ Minute :\ Second
 
 date :: DateTime -> Date
-date = left.left.left
+date = fst.fst.fst
 
 time :: DateTime -> Time
 time (_:/h:/m:\s) = h:/m:/fromIntegral s
@@ -27,13 +28,13 @@ day :: DateTime -> Day
 day = Date.day . date
 
 hour :: DateTime -> Hour
-hour = right.left.left
+hour = snd.fst.fst
 
 minute :: DateTime -> Minute
-minute = right.left
+minute = snd.fst
 
 second :: DateTime -> Second
-second = right
+second = snd
 
 meridian :: DateTime -> String
 meridian g = if hour g >= 12 then "pm" else "am"

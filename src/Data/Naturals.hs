@@ -17,8 +17,6 @@ import Language.Haskell.TH hiding (Pred)
 import Test.QuickCheck.Arbitrary
 import Text.Format.Write (WriteBlock(..))
 import Text.Format.Read (ReadBlock(..), naturalParser)
-import Text.Parse
-import Text.ParserCombinators.Parsec (many1, digit)
 import Text.Printf
 
 -- | A class for natural numbers.
@@ -98,9 +96,6 @@ instance Natural n => Modable (Succ n) where
 instance Natural n => Show (Succ n) where
     show z@(Z x) = printf (printf "%%0%dd" $ digits $ normal z) x where
         digits = length . show . natural
-
-instance Natural n => Parse (Succ n) where
-    parse = (Z . read) <$> many1 digit
 
 -- The first 256 shortcuts for Succ types.
 -- Gross, yes, but until template haskell allows you to assign types to

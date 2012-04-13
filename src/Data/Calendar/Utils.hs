@@ -7,6 +7,7 @@ module Data.Calendar.Utils
     , flatten2
     , allBefore
     , nearerZero
+    , (.:)
     ) where
 import Control.Arrow ((***))
 import System.Random (Random)
@@ -59,9 +60,8 @@ nearerZero :: (Integral x, Integral a, Bounded a) => x -> a -> [a]
 nearerZero x a = if x >= 0 then [minBound..pred a] else [succ a..maxBound]
 
 
--- | Attempts to find a value at a certain index in a list.
--- | If the index is not present, falls back to the first element in the list.
--- | If the list is empty, falls back to a given default value.
+-- | Attempts to find a value at a certain index in a list, treating the
+-- | list as a ring. If the list is empty, falls back to a given fallback.
 force :: a -> Int -> [a] -> a
 force a _ [] = a
 force _ i xs = cycle xs !! i
@@ -70,3 +70,7 @@ force _ i xs = cycle xs !! i
 flatten2 :: [(a, a)] -> [a]
 flatten2 (x:xs) = fst x : snd x : flatten2 xs
 flatten2 [] = []
+
+
+(.:) :: (y -> z) -> (w -> x -> y) -> w -> x -> z
+(.:) = (.) . (.)

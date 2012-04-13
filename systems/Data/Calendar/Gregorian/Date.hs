@@ -12,6 +12,7 @@ import Data.Naturals
 import Data.Normalize
 import Data.Pair
 import Data.BoundedIn
+import Prelude hiding (fst, snd, curry)
 import System.Random
 import Test.QuickCheck
 import Text.Format.Read
@@ -21,17 +22,19 @@ type Date = Year :/ Month :\ Day
 
 mkDate :: (Integral a, Integral b, Integral c) => a -> b -> c -> Date
 mkDate y m d = normal $ shifted y :/ shifted m :\ shifted d where
-    shifted :: forall x y. (Integral x, Integral y) => x -> y
-    shifted = fromIntegral . pred
+
+-- TODO: Don't export this.
+shifted :: forall x y. (Integral x, Integral y) => x -> y
+shifted = fromIntegral . pred
 
 year :: Date -> Year
-year = left.left
+year = fst.fst
 
 month :: Date -> Month
-month = right.left
+month = snd.fst
 
 day :: Date -> Day
-day = right
+day = snd
 
 newtype Year = Y Integer deriving
     ( Eq, Ord, Num, Real, Enum, Integral
@@ -98,3 +101,32 @@ instance BoundedIn Day (Year:/Month) where
     end ym@(_:/m) | m < minBound || m > maxBound = end $ normal ym
     end (y:/1) = if isLeapYear y then D 28 else D 27
     end (_:/m) = if m `elem` [8,3,5,9] then D 29 else D 30
+
+{-
+instance Loader Date Standard.Standard where
+    strings =
+        [ ( Standard.MonthDay, map show [minBound..maxBound :: Month] )
+        , ( Standard.Meridian, ["am", "pm"] )
+        , ( Standard.WeekDay, undefined {-TODO-} )
+        ]
+    
+instance Loader Date Standard.Standard where
+    loadable Standard.Date _ = load (undefined::Integer)
+    loadable Standard.Year _ = load (undefined::Integer)
+    loadable Standard.Month _ = stringsParser $ map show months
+        where months = [minBound .. maxBound :: Month]
+    loadable Standard.MonthDay _ = load (undefined::Integer)
+    loadable Standard.Week _ = undefined -- TODO
+    loadable Standard.WeekDay _ = undefined
+    loadable _ _ = []
+
+    create = Map.fold apply defaults where
+        defaults = Y 0 :/ M 0 :\ D 0
+        apply (Standard.Date, i) _ = toInteger i
+        apply (Standard.Year, i) (_:/m:\d) = (shifted i):/m:\d
+        apply (Standard.Month, i) (y:/_:\d) = y:/(shifted i):\d
+        apply (Standard.MonthDay, i) (y:/m:\d) = y:/m:\(shifted i)
+        apply (Standard.Week, i) d = undefined
+        apply (Standard.WeekDay, i) d = undefined
+        apply _ d = d
+TODO-}

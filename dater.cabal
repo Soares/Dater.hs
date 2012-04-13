@@ -37,25 +37,24 @@ Library
   Ghc-Options: -O2 -Wall
   Hs-Source-Dirs: src, systems, formats
   Exposed-Modules:
+    Data.BoundedIn,
     Data.Calendar,
     Data.Calendar.Composers,
-    Data.Calendar.Utils,
     Data.Calendar.Gregorian,
     Data.Calendar.Gregorian.Date,
-    Data.Calendar.Gregorian.Time,
     Data.Calendar.Gregorian.Places,
+    Data.Calendar.Gregorian.Time,
     Data.Calendar.Gregorian.TimeZones,
     Data.Calendar.Kaol,
-    Data.Locale
+    Data.Calendar.Locale
+    Data.Calendar.Utils,
     Data.Modable,
     Data.Naturals,
     Data.Normalize,
     Data.Pair,
-    Data.BoundedIn,
     Text.Format,
-    Text.Format.Table,
-    Text.Format.Read,
-    Text.Format.Write,
-    Text.Format.Parse,
     Text.Format.Calendar.Standard,
-    Text.Parse
+    Text.Format.Parse,
+    Text.Format.Read,
+    Text.Format.Table,
+    Text.Format.Write

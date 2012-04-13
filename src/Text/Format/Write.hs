@@ -17,7 +17,7 @@ module Text.Format.Write
     ) where
 import Control.Applicative
 import Data.Char
-import Data.Locale
+import Data.Calendar.Locale
 import Text.Format.Parse (loadFormat)
 import Text.ParserCombinators.Parsec (ParseError)
 import Text.Format.Table

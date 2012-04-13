@@ -15,12 +15,11 @@ import Data.Normalize
 import Data.BoundedIn
 import System.Random
 import Test.QuickCheck
-import Text.Parse
 import Text.Printf (printf)
 
 newtype Year = Y Integer deriving
     ( Eq, Ord, Num, Real, Enum, Integral
-    , Parse, Normalize, Arbitrary, Modable)
+    , Normalize, Arbitrary, Modable)
 instance Relable Year where type Relative Year = Maybe Year
 instance Show Year where show (Y y) = show y
 isLeapYear :: Year -> Bool
@@ -32,7 +31,7 @@ isLeapYear y
 
 
 newtype Month = M Int deriving
-    (Eq, Ord, Num, Real, Enum, Integral, Parse, Random, Modable)
+    (Eq, Ord, Num, Real, Enum, Integral, Random, Modable)
 instance Relable Month where type Relative Month = Maybe Month
 instance Arbitrary Month where arbitrary = maxMag 1000
 instance Show Month where show (M m) = printf "%02d" m
@@ -40,7 +39,7 @@ instance BoundedIn Month Year where range = const (0, 12)
 
 
 newtype Day = D Int deriving
-    (Eq, Ord, Num, Real, Enum, Integral, Parse, Random, Modable)
+    (Eq, Ord, Num, Real, Enum, Integral, Random, Modable)
 instance Relable Day where type Relative Day = Maybe Day
 instance Arbitrary Day where arbitrary = maxMag 1000
 instance Show Day where show (D d) = printf "%02d" d

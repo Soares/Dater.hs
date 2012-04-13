@@ -7,6 +7,7 @@ module Text.Format.Read
     , readSpec
     , readSpecIn
     , blockParser
+    , load
     , parseBlock
     , naturalParser
     , signParser
@@ -27,7 +28,7 @@ module Text.Format.Read
     ) where
 import Control.Applicative
 import Data.Char
-import Data.Locale
+import Data.Calendar.Locale
 import Text.Format.Table
 import Text.Format.Parse (loadFormat)
 import Control.Monad (void)
@@ -51,7 +52,7 @@ type ParseBlock = (Padding -> Parser Integer, Casing -> Parser Integer)
 
 class Loader x f where
     create :: Map f Integer -> x
-    loadable :: Maybe (Locale x) -> f -> [ParseBlock]
+    loadable :: f -> Maybe (Locale x) -> [ParseBlock]
 
 class ReadBlock a where
     number :: a -> Integer
@@ -74,6 +75,10 @@ blockParser _ = (fmap number . num, fmap number . text) where
     num = parseNumerical :: Padding -> Parser a
     text = parseTextual :: Casing -> Parser a
 
+load :: forall a. ReadBlock a => a -> [ParseBlock]
+load = pure . blockParser
+
+-- TODO: Curry
 intStrParser :: (Integer, String) -> ParseBlock -- TODO: curry?
 intStrParser (i, s) = (integerParser i, (*> pure i) . flip stringParser s)
 
@@ -121,7 +126,7 @@ readSpecIn loc spec = create <$> dict where
     parseFrom (Right str) = Right <$> void (string str)
     parseFrom (Left sec) = Left . (,) tgt <$> get sty block where
         Section tgt sty p c n = sec
-        blocks = loadable loc tgt
+        blocks = loadable tgt loc
         block = force (nonNumerical, nonTextual) n blocks
         get Number = flip fst p
         get Name = flip snd c

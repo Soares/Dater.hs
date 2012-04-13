@@ -6,11 +6,11 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Calendar.Composers ((:/)((:/)), (:\)((:\))) where
 import Control.Applicative
-import Control.Arrow ((***), second)
 import Data.Calendar.Utils (count)
 import Data.Normalize
 import Data.Pair
 import Data.BoundedIn (BoundedIn(..), isInBounds, countIn)
+import Prelude hiding (fst, snd, uncurry)
 import Test.QuickCheck.Arbitrary
 import Text.Format.Write
 
@@ -182,7 +182,7 @@ instance Constposable a b => Integral (a:/b) where
     quotRem = dumbQuotRem
 
 instance Varposable a b => Integral (a:\b) where
-    toInteger = (size <$> left <*> right) . normal
+    toInteger = uncurry size . normal
     quotRem = dumbQuotRem
 
 

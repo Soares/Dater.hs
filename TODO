@@ -1,0 +1,5 @@
+Learn how to use "shrink", and possibly remove the NOTE TO DEVELOPERS
+Re-export Pair-compatable arrow functions in Pair
+reorganize utils
+make daysInYear fast
+remove maxMag
