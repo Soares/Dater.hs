@@ -79,13 +79,12 @@ instance Normalize TimeZone where
 
 -- TODO: abstract similarities between local...
 nonlocalTimeZoneStyles :: TimeZone -> Writers
-nonlocalTimeZoneStyles tz = disjointBlock nums names where
+nonlocalTimeZoneStyles tz = Write $ zip (cycle nums) (cycle names) where
     nums = map (`showTimeZone` tz) [minBound..maxBound]
     names = catMaybes [code tz, name tz, Just $ showTimeZone HourMinute tz]
 
 localTimeZoneStyles :: Locale TimeZone -> TimeZone -> Writers
-localTimeZoneStyles loc tz = djb nums names where
-    djb = disjointBlock :: [String] -> [String] -> Writers
+localTimeZoneStyles loc tz = Write $ zip (cycle nums) (cycle names) where
     nums = map (`showTimeZone` tz) [minBound..maxBound]
     names = flatten2 $ zoneNames loc tz :: [String]
 

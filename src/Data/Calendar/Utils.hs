@@ -1,9 +1,9 @@
 module Data.Calendar.Utils
     ( count
+    , outTo
     , force
     , signed
     , search
-    , maxMag
     , flatten2
     , allBefore
     , nearerZero
@@ -25,8 +25,8 @@ allBefore a = if a >= 0 then [0..pred a] else [succ a..pred 0]
 
 
 -- | A test set generator that does not exceed a certain magnitude
-maxMag :: (Random a, Integral a) => Int -> Gen a
-maxMag n = sized $ \s -> choose $ from (negate $ max s n, max s n)
+outTo :: (Random a, Integral a) => Int -> Gen a
+outTo n = sized $ \s -> choose $ from (negate $ max s n, max s n)
     where from = fromIntegral *** fromIntegral
 
 
@@ -67,10 +67,12 @@ force a _ [] = a
 force _ i xs = cycle xs !! i
 
 
+-- Tuple flattening
 flatten2 :: [(a, a)] -> [a]
 flatten2 (x:xs) = fst x : snd x : flatten2 xs
 flatten2 [] = []
 
 
+-- Double composition
 (.:) :: (y -> z) -> (w -> x -> y) -> w -> x -> z
 (.:) = (.) . (.)

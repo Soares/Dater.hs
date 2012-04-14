@@ -11,6 +11,7 @@ module Data.Calendar
     , CalendarLike
     , ZoneLike
     ) where
+import Control.Applicative
 import Data.Calendar.Composers
 import Data.Modable
 import Data.Normalize
@@ -54,4 +55,4 @@ instance CalendarLike dt z => Normalize (Calendar dt z) where
         (o, dt') = normalize (dt + fromIntegral (offset + excess))
 
 instance (Integral dt, Normalize dt, Normalize z) => WriteBlock (Calendar dt z) where
-    numerical = show . toInteger . normal . dateTime
+    numerical = pure . show . toInteger . normal . dateTime

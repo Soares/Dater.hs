@@ -14,7 +14,7 @@ testPair :: forall p a b.
     , Pair p) => p a b -> Test
 testPair _ = testGroup "pair"
     [ testProperty "indempotence" (\(p::p a b) -> fromTuple (toTuple p) == p)
-    , testProperty "rebuild" (\(p::p a b) -> build (fst p) (snd p) == p)
+    , testProperty "rebuild" (\(p::p a b) -> (&) (fst p) (snd p) == p)
     -- TODO: Many more pair tests
     ]
 

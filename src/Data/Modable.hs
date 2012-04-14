@@ -36,17 +36,17 @@ class Relable a => Modable a where
 isAbsolute :: forall a. Modable a => Relative a -> Bool
 isAbsolute = isJust . (absify :: Relative a -> Maybe a)
 
-instance (Relable a, Relable b, Pair (-&)) => Relable (a -& b) where
-    type Relative (a -& b) = (Relative a -& Relative b)
+instance (Relable a, Relable b, Pair (&)) => Relable (a & b) where
+    type Relative (a & b) = (Relative a & Relative b)
 
-instance (Modable a, Modable b, Pair (-&)) => Modable (a -& b) where
+instance (Modable a, Modable b, Pair (&)) => Modable (a & b) where
     plus = merge . (plus *** plus)
     minus = merge . (minus *** minus)
     clobber = merge . (clobber *** clobber)
     like = uncurry (&&) .: (merge . (like *** like))
     relify = relify *** relify
     absify = join . (absify *** absify) where
-        join p = build <$> fst p <*> snd p
+        join p = (&) <$> fst p <*> snd p
 
 
 instance Relable Integer where type Relative Integer = Maybe Integer

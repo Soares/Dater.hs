@@ -1,7 +1,7 @@
+{-# LANGUAGE TypeOperators #-}
 module Data.Calendar.Gregorian.Weeks where
+import Control.Applicative
 import Data.Calendar.Gregorian.Date
-import Data.Calendar.Composers -- TODO encapsulate Date
-import Data.Calendar.Utils (count)
 import Data.Modable
 import Text.Format.Write
 
@@ -16,8 +16,8 @@ data WeekDay
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
 instance WriteBlock WeekDay where
-    textual = show
-    numerical = show . fromEnum
+    textual = pure . show
+    numerical = pure . show . fromEnum
 
 seven :: Integral a => a
 seven = fromIntegral . length $ [minBound .. maxBound :: WeekDay]
@@ -29,9 +29,10 @@ prev :: WeekDay -> WeekDay
 prev w = if w == Sunday then Saturday else pred w
 
 abbrevs :: WeekDay -> [String]
-abbrevs Tuesday = ["Tues"]
-abbrevs Wednesday = ["Wednes"]
-abbrevs Thursday = ["Thur", "Thurs"]
+abbrevs Tuesday = ["Tue", "Tues"]
+abbrevs Wednesday = ["Wed", "Wednes"]
+abbrevs Thursday = ["Thu", "Thur", "Thurs"]
+abbrevs w = pure $ take 3 $ show w
 
 names :: WeekDay -> [String]
 names w = [show w, take 3 $ show w] ++ abbrevs w
@@ -42,7 +43,7 @@ weekDay d = toEnum $ (o + fromIntegral d) `mod` seven where o = 0
 -- The week year begins on the week that contains Jan 4
 startOfWeekYear :: Date -> Date
 -- TODO: abstract out contsruction/destruction
-startOfWeekYear (y:/_:\_) = startOfMonWeek (y:/0:\3)
+startOfWeekYear d = startOfMonWeek (year d /- 1 /- 4)
 
 daysSinceBeginningOfWeekYear :: Date -> Integer
 daysSinceBeginningOfWeekYear d = d `sub` startOfWeekYear d
@@ -52,10 +53,10 @@ weekYear d = (if delta < 0 then pred else id) (year d)
     where delta = daysSinceBeginningOfWeekYear d
 
 firstSunInYear :: Date -> Date
-firstSunInYear (y:/_:\_) = startOfSunWeek (y:/0:\6)
+firstSunInYear d = startOfSunWeek (year d /- 1 /- 7)
 
 firstMonInYear :: Date -> Date
-firstMonInYear (y:/_:\_) = startOfMonWeek (y:/0:\6)
+firstMonInYear d = startOfMonWeek (year d /- 1 /- 7)
 
 startOfSunWeek :: Date -> Date
 startOfSunWeek d = d `less` toInteger n where
@@ -86,7 +87,8 @@ weekInYearSunFirst d = (fromInteger delta) `div` seven
 weekInWeekYear :: Date -> Int
 weekInWeekYear d = succ $ weekInYearMonFirst d
 
--- TODO: Put these in Modable
+
+-- TODO: Modable is ALL WRONG
 minus :: Modable a => a -> a -> Relative a
 minus = undefined
 

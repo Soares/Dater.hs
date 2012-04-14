@@ -18,7 +18,6 @@ import Data.Calendar.Gregorian.Weeks
 import qualified Data.Calendar.Gregorian.DateTime as DateTime
 import Data.Calendar.Gregorian.TimeZones
 import Data.Ratio (numerator, denominator)
-import Text.Format.Read
 import Text.Format.Write
 import qualified Text.Format.Calendar.Standard as Standard
 import Text.Printf (printf)
@@ -54,27 +53,28 @@ meridian :: Gregorian -> String
 meridian g = if hour g >= 12 then "pm" else "am"
 
 instance Formatter Gregorian Standard.Standard where
-    formattable Standard.DateTime _ = out
-    formattable Standard.Date _ = out . date
-    formattable Standard.Time _ = out . time
+    formattable Standard.DateTime _ = Write
+    formattable Standard.Date _ = Write . date
+    formattable Standard.Time _ = Write . time
     formattable Standard.TimeZone Nothing = nonlocalTimeZoneStyles . zone
     formattable Standard.TimeZone (Just loc) = tzs <$> zloc <*> zone where
         tzs = localTimeZoneStyles
         zloc = At (place loc) <$> dateTime
-    formattable Standard.Century _ = out . (`div` 100) . year
-    formattable Standard.Year _ = out . year
-        -- TODO: alt is week year
-    formattable Standard.Month _ = out . month
-    formattable Standard.MonthDay _ = out . day
-    formattable Standard.Week _ = out . (`div` 7) . toInteger . date
-        -- TODO: week year
-        -- TODO: alt is Sunday == 7
-    formattable Standard.WeekDay _ = out . weekDay . date
-    formattable Standard.Hour _ = out . hour
-    formattable Standard.Meridium _ = out . meridian
-    formattable Standard.Minute _ = out . minute
-    formattable Standard.Second _ = out . second
+    formattable Standard.Century _ = Write . (`div` 100) . year
+    formattable Standard.Year _ = Write . map toInteger . ys where
+        ys d = [year d, weekYear $ date d]
+    formattable Standard.Month _ = Write . month
+    formattable Standard.MonthDay _ = Write . day
+    formattable Standard.Week _ = Write . ws . date where
+        ws d = [weekInYearMonFirst d, weekInYearSunFirst d, weekInWeekYear d]
+    formattable Standard.WeekDay _ = Write . ws . date where
+        ws d = map (\num->(num $ weekDay d, show $ weekDay d)) styles
+        styles = [numOfWeekMonFirst, numOfWeekSunFirst]
+    formattable Standard.Hour _ = Write . hour
+    formattable Standard.Meridium _ = Write . meridian
+    formattable Standard.Minute _ = Write . minute
+    formattable Standard.Second _ = Write . second
     formattable Standard.Fraction _ = writeIntStr . (i &&& s) where
-        writeIntStr = out :: (Integer, String) -> Writers
+        writeIntStr = Write :: (Integer, String) -> Writers
         i = (10^(9::Int) *) . floor . extra
         s = printf "%d/%d" <$> (numerator.extra) <*> (denominator.extra)

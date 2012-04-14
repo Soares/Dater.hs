@@ -201,7 +201,7 @@ instance (Varposable a b, Arbitrary a, Arbitrary b) => Arbitrary (a:\b) where
 -- | Composed types can be formatted numerically.
 -- | This allows you to, say, use "%s" to show seconds since time 0.
 instance Constposable a b => WriteBlock (a:/b) where
-    numerical = show . toInteger
+    numerical = pure . show . toInteger
 
 instance Varposable a b => WriteBlock (a:\b) where
-    numerical = show . toInteger
+    numerical = pure . show . toInteger

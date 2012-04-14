@@ -7,12 +7,10 @@
 module Text.Format.Write
     ( Writers(..)
     , WriteBlock(..)
-    , disjointBlock
     , writeFormat
     , writeFormatIn
     , writeSpec
     , writeSpecIn
-    , out
     , Formatter(..)
     ) where
 import Control.Applicative
@@ -31,18 +29,15 @@ import Text.Format.Table
     )
 
 
-data Writers = forall a. WriteBlock a => Write [a]
-
-out :: forall a. WriteBlock a => a -> Writers
-out = Write . pure
+data Writers = forall a. WriteBlock a => Write a
 
 class WriteBlock a where
-    textual :: a -> String
+    textual :: a -> [String]
     textual = numerical
-    numerical :: a -> String
+    numerical :: a -> [String]
     numerical = textual
-    width :: a -> Int
-    width = const 0
+    width :: a -> [Int]
+    width = const [0]
 
 writeFormat :: forall f x. (Format f, Formatter x f)
     => f -> String -> x
@@ -69,13 +64,13 @@ writeSpecIn loc x = concatMap toStr where
     toStr (Left sec) = format c p w str where
         Section tgt sty p c alt = sec
         elm = formattable tgt loc x
-        w = force 0 alt $ case elm of (Write o) -> map width o
+        w = force 0 alt $ case elm of (Write o) -> width o
         str = render sty alt elm
 
 render :: Style -> Int -> Writers -> String
 render sty i sec = force "" i $ case (sty, sec) of
-    (Name, Write o) -> map textual o
-    (Number, Write o) -> map numerical o
+    (Name, Write o) -> textual o
+    (Number, Write o) -> numerical o
 
 format :: Casing -> Padding -> Int -> String -> String
 format Normal None _ str = str
@@ -94,29 +89,42 @@ pad c w str@(x:xs)
     | all isDigit (c:xs) = x : pad c (w-1) xs
     | otherwise = replicate (w - length str) c ++ str
 
-disjointBlock :: forall a b. WriteBlock (a, b) => [a] -> [b] -> Writers
-disjointBlock a b = Write $ zip (cycle a) (cycle b)
-
 class Formatter x f where
     formattable :: f -> Maybe (Locale x) -> x -> Writers
 
 instance WriteBlock Integer where
-    numerical = show
+    numerical = pure . show
 
 instance WriteBlock Int where
-    numerical = show
+    numerical = pure . show
 
 instance WriteBlock String where
-    textual = id
+    textual = pure . show
 
 instance WriteBlock (Int, String) where
     numerical = numerical . fst
-    textual = snd
+    textual = pure . snd
 
 instance WriteBlock (Integer, String) where
     numerical = numerical . fst
-    textual = snd
+    textual = pure . snd
 
 instance WriteBlock (String, String) where
-    numerical = fst
-    textual = snd
+    numerical = pure . fst
+    textual = pure . snd
+
+instance WriteBlock [Int] where
+    numerical = concatMap numerical
+    textual = concatMap textual
+
+instance WriteBlock [Integer] where
+    numerical = concatMap numerical
+    textual = concatMap textual
+
+instance WriteBlock [String] where
+    numerical = concatMap numerical
+    textual = concatMap textual
+
+instance (WriteBlock (a, b)) => WriteBlock [(a, b)] where
+    numerical = concatMap numerical
+    textual = concatMap textual

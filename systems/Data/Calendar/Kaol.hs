@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Calendar.Kaol where
 import Data.Calendar
-import Data.Calendar.Utils (maxMag)
+import Data.Calendar.Utils (outTo)
 import Data.Modable
 import Data.Naturals
 import Data.Normalize
@@ -33,7 +33,7 @@ isLeapYear y
 newtype Month = M Int deriving
     (Eq, Ord, Num, Real, Enum, Integral, Random, Modable)
 instance Relable Month where type Relative Month = Maybe Month
-instance Arbitrary Month where arbitrary = maxMag 1000
+instance Arbitrary Month where arbitrary = outTo 1000
 instance Show Month where show (M m) = printf "%02d" m
 instance BoundedIn Month Year where range = const (0, 12)
 
@@ -41,7 +41,7 @@ instance BoundedIn Month Year where range = const (0, 12)
 newtype Day = D Int deriving
     (Eq, Ord, Num, Real, Enum, Integral, Random, Modable)
 instance Relable Day where type Relative Day = Maybe Day
-instance Arbitrary Day where arbitrary = maxMag 1000
+instance Arbitrary Day where arbitrary = outTo 1000
 instance Show Day where show (D d) = printf "%02d" d
 instance BoundedIn Day (Year:\Month) where
     start (_:\m) = if m == 0 then 0 else 1

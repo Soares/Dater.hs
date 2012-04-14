@@ -56,7 +56,7 @@ instance Natural n => Normalize (Succ n) where
         o = fromIntegral z `div` fromIntegral n
 
 instance Natural n => WriteBlock (Succ n) where
-    numerical = show . normal
+    numerical = pure . show . normal
 
 instance Natural n => ReadBlock (Succ n) where
     number = toInteger
